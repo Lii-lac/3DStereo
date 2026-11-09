@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Pocket header tabs</title>
+<style>
+:root { --bg:#121212; --chip:#2a2a2a; --green:#1ed760; --grey:#b3b3b3; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:#0a0a0a; color:#fff; font-family:"Segoe UI", system-ui, sans-serif; padding:28px 36px; }
+.dir { display:flex; align-items:flex-start; gap:28px; margin-bottom:34px; }
+.tag { width:28px; font:700 22px/1 "Segoe UI"; color:var(--green); padding-top:8px; }
+.pair { display:flex; flex-direction:row; align-items:flex-start; gap:28px; }
+.scr { position:relative; width:400px; height:240px; background:var(--bg); overflow:hidden; zoom:1.45; border-radius:2px; }
+.scr.b { width:320px; }
+.hd { position:absolute; left:0; top:0; right:0; height:34px; display:flex; align-items:center; gap:6px; padding:0 6px; background:var(--bg); z-index:2; }
+.hd.tall { height:40px; }
+.ic { width:26px; height:24px; border-radius:12px; background:var(--chip); display:flex; align-items:center; justify-content:center; flex:none; }
+.ic.on { background:var(--green); }
+.ic svg { width:14px; height:14px; fill:#fff; }
+.ic.on svg { fill:#000; }
+.pill { height:24px; border-radius:12px; background:var(--chip); padding:0 11px; display:flex; align-items:center; font:600 12px/1 "Segoe UI"; flex:none; }
+.pill.on { background:var(--green); color:#000; }
+.grow { flex:1; }
+.fade { position:absolute; right:34px; top:0; width:30px; height:34px; background:linear-gradient(90deg, transparent, var(--bg)); z-index:3; }
+/* B: the on one grows its name */
+.ic.wide { width:auto; padding:0 11px 0 9px; gap:6px; font:700 12px/1 "Segoe UI"; color:#000; }
+/* C: a title */
+.title { font:800 17px/1 "Segoe UI"; letter-spacing:-.2px; }
+.dots { display:flex; gap:4px; }
+.dots .ic { width:24px; height:22px; background:transparent; }
+.dots .ic svg { fill:var(--grey); width:15px; height:15px; }
+.dots .ic.on { background:var(--chip); }
+.dots .ic.on svg { fill:var(--green); }
+.ul { position:absolute; bottom:3px; height:2px; background:var(--green); border-radius:1px; }
+.rows { position:absolute; left:0; right:0; top:36px; }
+.tall ~ .rows { top:42px; }
+.row { display:flex; align-items:center; height:34px; padding:0 8px; gap:8px; }
+.cv { width:26px; height:26px; border-radius:2px; flex:none; }
+.t1 { font:400 11px/1.25 "Segoe UI"; }
+.t2 { font:400 9px/1.25 "Segoe UI"; color:var(--grey); }
+.mini { position:absolute; left:6px; right:6px; bottom:6px; height:40px; border-radius:6px; background:#3a2a2a; z-index:2; }
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute">
+ <symbol id="burger" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="1.8" rx=".9"/><rect x="2" y="7.1" width="12" height="1.8" rx=".9"/><rect x="2" y="11.2" width="12" height="1.8" rx=".9"/></symbol>
+ <symbol id="home" viewBox="0 0 16 16"><path d="M8 1.6 1.4 7.4h2v6.8h3.8V10h1.6v4.2h3.8V7.4h2z"/></symbol>
+ <symbol id="lists" viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="9" height="1.7" rx=".8"/><rect x="1.5" y="6.3" width="9" height="1.7" rx=".8"/><rect x="1.5" y="10.1" width="5.5" height="1.7" rx=".8"/><path d="M12 4.5v6.3a2 2 0 1 0 1.5 1.9V6.6l1.8.6V5.4z"/></symbol>
+ <symbol id="artist" viewBox="0 0 16 16"><circle cx="8" cy="5.2" r="3.2"/><path d="M1.8 14.6c.6-3.3 3.1-5 6.2-5s5.6 1.7 6.2 5z"/></symbol>
+ <symbol id="album" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 1a7 7 0 1 1 0 14A7 7 0 0 1 8 1zm0 5.3a1.7 1.7 0 1 0 0 3.4 1.7 1.7 0 0 0 0-3.4z"/></symbol>
+ <symbol id="song" viewBox="0 0 16 16"><path d="M6 2.2v8.3a2.4 2.4 0 1 0 1.6 2.3V5.6l5.2-1.3v4.9a2.4 2.4 0 1 0 1.6 2.3V.9z"/></symbol>
+ <symbol id="search" viewBox="0 0 16 16"><path d="M6.7 1.5a5.2 5.2 0 0 1 4.2 8.3l3.6 3.6-1.2 1.2-3.6-3.6A5.2 5.2 0 1 1 6.7 1.5zm0 1.7a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/></symbol>
+</svg>
+
+<template id="rows">
+ <div class="rows">
+  <div class="row"><div class="cv" style="background:linear-gradient(135deg,#0b6b30,#1ed760)"></div><div><div class="t1">Liked Songs</div><div class="t2">Playlist · 412 songs</div></div></div>
+  <div class="row"><div class="cv" style="background:#8a7f9c"></div><div><div class="t1">swing and a Miss</div><div class="t2">Playlist · Lilac</div></div></div>
+  <div class="row"><div class="cv" style="background:#7a3b2e"></div><div><div class="t1">foulwintercore</div><div class="t2">Playlist · Lilac</div></div></div>
+  <div class="row"><div class="cv" style="background:#5d6b52"></div><div><div class="t1">Pylon</div><div class="t2">Playlist · Lilac</div></div></div>
+  <div class="row"><div class="cv" style="background:#a99a7c"></div><div><div class="t1">Dearie</div><div class="t2">Playlist · Lilac</div></div></div>
+  <div class="row"><div class="cv" style="background:#3c4a63"></div><div><div class="t1">late trains</div><div class="t2">Playlist · Lilac</div></div></div>
+ </div>
+</template>
+
+<!-- A: the same chips, bigger -->
+<div class="dir"><div class="tag">A</div><div class="pair">
+ <div class="scr"><div class="hd">
+  <div class="ic"><svg><use href="#burger"/></svg></div>
+  <div class="ic"><svg><use href="#home"/></svg></div>
+  <div class="pill on">Playlists</div><div class="pill">Artists</div><div class="pill">Albums</div><div class="pill">Songs</div>
+  <div class="grow"></div><div class="ic"><svg><use href="#search"/></svg></div>
+ </div></div>
+ <div class="scr b"><div class="hd">
+  <div class="ic"><svg><use href="#burger"/></svg></div>
+  <div class="ic"><svg><use href="#home"/></svg></div>
+  <div class="pill on">Playlists</div><div class="pill">Artists</div><div class="pill">Albums</div><div class="pill">Songs</div>
+ </div><div class="fade"></div><div class="hd" style="left:auto;width:38px;padding:0 6px"><div class="ic"><svg><use href="#search"/></svg></div></div><div class="mini"></div></div>
+</div></div>
+
+<!-- B: icons, the one you're on says its name -->
+<div class="dir"><div class="tag">B</div><div class="pair">
+ <div class="scr"><div class="hd">
+  <div class="ic"><svg><use href="#burger"/></svg></div>
+  <div class="ic"><svg><use href="#home"/></svg></div>
+  <div class="ic on wide"><svg><use href="#lists"/></svg>Playlists</div>
+  <div class="ic"><svg><use href="#artist"/></svg></div>
+  <div class="ic"><svg><use href="#album"/></svg></div>
+  <div class="ic"><svg><use href="#song"/></svg></div>
+  <div class="grow"></div><div class="ic"><svg><use href="#search"/></svg></div>
+ </div></div>
+ <div class="scr b"><div class="hd">
+  <div class="ic"><svg><use href="#burger"/></svg></div>
+  <div class="ic"><svg><use href="#home"/></svg></div>
+  <div class="ic on wide"><svg><use href="#lists"/></svg>Playlists</div>
+  <div class="ic"><svg><use href="#artist"/></svg></div>
+  <div class="ic"><svg><use href="#album"/></svg></div>
+  <div class="ic"><svg><use href="#song"/></svg></div>
+  <div class="grow"></div><div class="ic"><svg><use href="#search"/></svg></div>
+ </div><div class="mini"></div></div>
+</div></div>
+
+<!-- C: the page's name as a title, the rest as icons on the right -->
+<div class="dir"><div class="tag">C</div><div class="pair">
+ <div class="scr"><div class="hd tall">
+  <div class="ic"><svg><use href="#burger"/></svg></div>
+  <div class="title" style="margin-left:4px">Playlists</div>
+  <div class="grow"></div>
+  <div class="dots">
+   <div class="ic"><svg><use href="#home"/></svg></div>
+   <div class="ic on"><svg><use href="#lists"/></svg></div>
+   <div class="ic"><svg><use href="#artist"/></svg></div>
+   <div class="ic"><svg><use href="#album"/></svg></div>
+   <div class="ic"><svg><use href="#song"/></svg></div>
+  </div>
+  <div class="ic" style="margin-left:4px"><svg><use href="#search"/></svg></div>
+ </div></div>
+ <div class="scr b"><div class="hd tall">
+  <div class="ic"><svg><use href="#burger"/></svg></div>
+  <div class="title" style="margin-left:4px">Playlists</div>
+  <div class="grow"></div>
+  <div class="dots">
+   <div class="ic"><svg><use href="#home"/></svg></div>
+   <div class="ic on"><svg><use href="#lists"/></svg></div>
+   <div class="ic"><svg><use href="#artist"/></svg></div>
+   <div class="ic"><svg><use href="#album"/></svg></div>
+   <div class="ic"><svg><use href="#song"/></svg></div>
+  </div>
+ </div><div class="mini"></div></div>
+</div></div>
+
+<script>
+const t = document.getElementById('rows');
+document.querySelectorAll('.scr').forEach(s => s.appendChild(t.content.cloneNode(true)));
+</script>
+</body></html>

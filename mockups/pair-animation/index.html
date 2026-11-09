@@ -1,0 +1,229 @@
+<!doctype html><meta charset="utf-8"><title>3DStereo pairing, four ways to move</title>
+<style>
+html{background:#171717}
+body{margin:0;padding:30px;color:#d8d2c4;font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+.top{display:flex;gap:18px;align-items:center;margin:0 0 26px}
+button{font:inherit;color:#d8d2c4;background:#262626;border:0;border-radius:16px;padding:6px 18px;cursor:pointer}
+button:hover{background:#303030}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(440px,1fr));gap:46px 30px;justify-items:center}
+.cell{display:flex;flex-direction:column;align-items:center;gap:14px}
+.cell b{font-weight:600;color:#1ed760;font-size:20px}
+.rig{display:flex;flex-direction:column;align-items:center;gap:26px}
+canvas{display:block;background:#121212;box-shadow:0 0 0 8px #0a0a0a,0 14px 34px #000a}
+.icons{display:flex;gap:30px;align-items:center;margin:0 0 30px;padding:14px 20px;background:#181818;border-radius:10px;width:max-content}
+.icons span{color:#7d786c;font-size:12px}
+</style>
+<div class="top"><button id="replay">again</button><span id="ph" style="color:#7d786c;font-variant-numeric:tabular-nums"></span></div>
+<div class="icons"><canvas id="menu" width="260" height="150" style="box-shadow:none;background:#181818"></canvas><span>the menu entry, 22 px</span><canvas id="big" width="120" height="90" style="box-shadow:none;background:#181818"></canvas></div>
+<div class="grid" id="grid"></div>
+<script>
+const G='#1ed760',D='#0a6e39',CREAM='#f2e6cf',INK='#121212',TAPE='#4a2e1a',BG='#121212',WHITE='#fff';
+const CODE='BMYMKM', FONT='"Segoe UI",system-ui,sans-serif';
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=t=>{t=clamp(t);return 1-Math.pow(1-t,3)};
+const easeIO=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const lerp=(a,b,t)=>a+(b-a)*t;
+function rr(c,x,y,w,h,r){r=Math.min(r,w/2,h/2);c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function fillRR(c,x,y,w,h,r,col,a=1){c.globalAlpha=a;c.fillStyle=col;rr(c,x,y,w,h,r);c.fill();c.globalAlpha=1}
+function strokeRR(c,x,y,w,h,r,col,lw,a=1){c.globalAlpha=a;c.strokeStyle=col;c.lineWidth=lw;rr(c,x,y,w,h,r);c.stroke();c.globalAlpha=1}
+function txt(c,s,x,y,size,col,al='left',w='700',a=1){c.globalAlpha=a;c.fillStyle=col;c.font=w+' '+size+'px '+FONT;c.textAlign=al;c.fillText(s,x,y);c.globalAlpha=1}
+function arc(c,x,y,r,a0,a1,col,lw,a=1){c.globalAlpha=a;c.strokeStyle=col;c.lineWidth=lw;c.lineCap='round';c.beginPath();c.arc(x,y,r,a0,a1);c.stroke();c.globalAlpha=1}
+
+// ---- the timeline every idea shares: asking, the code, paired, a hold ---------------------------------------
+const ASK=1200, CODEMS=7000, PAIRMS=3200, HOLD=1600, TOTAL=ASK+CODEMS+PAIRMS+HOLD;
+function phase(ms){ms%=TOTAL;
+  if(ms<ASK)return{p:'ask',t:ms,f:ms/ASK};
+  ms-=ASK;if(ms<CODEMS)return{p:'code',t:ms,f:ms/CODEMS};
+  ms-=CODEMS;if(ms<PAIRMS)return{p:'pair',t:ms,f:ms/PAIRMS};
+  ms-=PAIRMS;return{p:'hold',t:ms,f:ms/HOLD}}
+const remaining=f=>3540*(1-f*0.9); // seconds on the clock, run fast for the mockup
+
+// ---- the exchange icon: one arrow over another, going opposite ways -------------------------------------------------
+function exch(c,x,y,s,col,lw=1.8,shift=0){
+  c.save();c.translate(x,y);c.scale(s,s);c.strokeStyle=col;c.fillStyle=col;c.lineWidth=lw;c.lineCap='round';c.lineJoin='round';
+  c.beginPath();c.moveTo(-8+shift,-4.2);c.lineTo(5+shift,-4.2);c.stroke();
+  c.beginPath();c.moveTo(3+shift,-7.6);c.lineTo(8+shift,-4.2);c.lineTo(3+shift,-0.8);c.closePath();c.fill();
+  c.beginPath();c.moveTo(8-shift,4.2);c.lineTo(-5-shift,4.2);c.stroke();
+  c.beginPath();c.moveTo(-3-shift,0.8);c.lineTo(-8-shift,4.2);c.lineTo(-3-shift,7.6);c.closePath();c.fill();
+  c.restore()}
+(function(){
+  const m=document.getElementById('menu').getContext('2d');m.scale(1.3,1.3);
+  const rows=[['Library',0],['Charts',1],['Pair',2],['Settings',3]];
+  rows.forEach(([n,k],i)=>{const y=14+i*30;const here=k===2;if(here)fillRR(m,6,y-12,170,26,6,'#fff',.12);
+    const col=here?G:'#fff';
+    if(k===0){[[-7,-6,2.2,12],[-3,-6,2.2,12]].forEach(r=>{m.fillStyle=col;m.fillRect(24+r[0],y+r[1],r[2],r[3])});m.fillStyle=col;m.save();m.translate(26,y);m.rotate(.17);m.fillRect(1,-6,3,12);m.restore()}
+    if(k===1){m.fillStyle=col;m.fillRect(17,y+1,3,6);m.fillRect(22.5,y-6,3,13);m.fillRect(28,y-2,3,9)}
+    if(k===2)exch(m,24,y,1.05,col,1.8);
+    if(k===3){m.fillStyle=col;m.beginPath();m.arc(24,y,6,0,7);m.fill();m.fillStyle='#181818';m.beginPath();m.arc(24,y,2.6,0,7);m.fill()}
+    txt(m,n,44,y+4,12,col,'left')});
+  const b=document.getElementById('big').getContext('2d');exch(b,60,45,3.4,G,1.8)})();
+
+// ---- one screen pair per idea: top 400x240, the hinge, touchscreen 320x240 ----------------------------------------
+const ideas=[];
+function rig(name,draw){const cell=document.createElement('div');cell.className='cell';cell.innerHTML='<b>'+name+'</b>';
+  const r=document.createElement('div');r.className='rig';
+  const mk=(w,h)=>{const cv=document.createElement('canvas');cv.width=w*2;cv.height=h*2;cv.style.width=w+'px';cv.style.height=h+'px';const c=cv.getContext('2d');c.scale(2,2);r.appendChild(cv);return c};
+  const top=mk(400,240),bot=mk(320,240);cell.appendChild(r);document.getElementById('grid').appendChild(cell);
+  ideas.push((ms)=>{[top,bot].forEach(c=>{c.fillStyle=BG;c.fillRect(0,0,400,240)});draw(top,bot,phase(ms),ms)})}
+
+// shared bits
+function cells(c,x0,pitch,y,w,h,letter,vis,col=G,bg='#1c1c1c'){
+  for(let i=0;i<6;i++){const a=vis(i);if(a<=0)continue;fillRR(c,x0+i*pitch-w/2,y+(1-a)*10,w,h,8,bg,a);txt(c,letter(i),x0+i*pitch,y+h*.76+(1-a)*10,h*.66,col,'center','700',a)}}
+function clockText(c,x,y,f,al='center',a=.5){const s=Math.floor(remaining(f));txt(c,Math.floor(s/60)+':'+String(s%60).padStart(2,'0'),x,y,10,WHITE,al,'400',a)}
+function consoleIcon(c,x,y,col,a=1){strokeRR(c,x-19,y-24,38,21,4,col,1.6,a);strokeRR(c,x-19,y+2,38,21,4,col,1.6,a);c.globalAlpha=a;c.fillStyle=col;c.beginPath();c.arc(x,y-.5,1.4,0,7);c.fill();c.globalAlpha=1}
+function phoneIcon(c,x,y,col,a=1){strokeRR(c,x-12,y-24,24,48,6,col,1.6,a);c.globalAlpha=a;c.fillStyle=col;c.fillRect(x-4,y-19,8,1.6);c.beginPath();c.arc(x,y+18,1.8,0,7);c.fill();c.globalAlpha=1}
+function bars(c,cx,y,t,alive,a=1){for(let i=0;i<9;i++){const h=alive?5+11*(.5+.5*Math.sin(t/170+i*1.7)):5;fillRR(c,cx-40+i*10-2.5,y-h,5,h,2.5,alive?G:'#262626',a)}}
+
+// ================= A: a split-flap board ============================================================================
+const FLAPS='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+function flapLetter(i,t,target,start,delay){ // which letter this cell shows at time t, and how far through a flip
+  const el=t-start-delay;if(el<0)return{ch:' ',fl:0,old:' '};
+  const N=4,D=95;const k=Math.min(N,Math.floor(el/D));const ph=(el%D)/D;
+  const seq=j=>j>=N?target:FLAPS[(i*7+j*11+3)%FLAPS.length];
+  if(el>=N*D)return{ch:target,fl:0,old:target};
+  return{ch:seq(k),fl:ph,old:k===0?' ':seq(k-1)}}
+function drawFlap(c,x,y,w,h,st,col){
+  fillRR(c,x-w/2,y,w,h,6,'#1d1d1d');
+  const half=(ch,top,sy)=>{c.save();c.beginPath();c.rect(x-w/2,top?y:y+h/2,w,h/2);c.clip();
+    c.translate(x,y+h/2);c.scale(1,sy);c.translate(-x,-(y+h/2));
+    txt(c,ch,x,y+h*.76,h*.66,col,'center');c.restore()};
+  if(st.fl===0){half(st.ch,true,1);half(st.ch,false,1)}
+  else{half(st.ch,true,1);half(st.old,false,1);
+    if(st.fl<.5){half(st.old,true,1-st.fl*2);}else{half(st.ch,false,(st.fl-.5)*2)}}
+  c.fillStyle='#0c0c0c';c.fillRect(x-w/2,y+h/2-.7,w,1.4)}
+rig('A  split-flap board',(top,bot,ph,ms)=>{
+  const W=44,H=62,P=50,X0=200-P*2.5;
+  const word='LINKED';
+  for(let i=0;i<6;i++){
+    let st;
+    if(ph.p==='ask'){st={ch:' ',fl:0,old:' '}}
+    else if(ph.p==='code'){st=flapLetter(i,ph.t,CODE[i],0,i*110)}
+    else if(ph.p==='pair'){st=flapLetter(i,ph.t,word[i],0,i*110);if(ph.t<i*110)st={ch:CODE[i],fl:0,old:CODE[i]}}
+    else st={ch:word[i],fl:0,old:word[i]};
+    drawFlap(top,X0+i*P,68,W,H,st,ph.p==='pair'||ph.p==='hold'?G:CREAM)}
+  txt(top,ph.p==='ask'?'Asking Spotify':'spotify.com/pair',200,46,12,WHITE,'center','400',.7);
+  // the time left, a strip of tape drawn down
+  const f=ph.p==='code'?ph.f:ph.p==='ask'?0:1;const w=240*(ph.p==='code'?1-f:ph.p==='ask'?1:0);
+  if(ph.p==='ask'||ph.p==='code'){fillRR(top,80,166,240,3,1.5,'#fff',.12);fillRR(top,80,166,w,3,1.5,CREAM,.85);clockText(top,200,188,f)}
+  // the touchscreen: the exchange, nudging
+  const nudge=ph.p==='code'?Math.sin(ms/700)*4:0;
+  exch(bot,160,100,5.2,ph.p==='pair'||ph.p==='hold'?G:CREAM,1.8,nudge*.5);
+  if(ph.p==='ask'||ph.p==='code')txt(bot,'Waiting for you',160,176,12,WHITE,'center','400',.7);
+  if(ph.p==='pair'||ph.p==='hold')txt(bot,'Linked',160,176,12,G,'center','700')});
+
+// ================= B: a mixtape cassette that drops through the hinge ===============================================
+function cassette(c,x,y,s,o){ // centre x,y; s scale; o: {code(n letters shown), prog, reel angle, stamp}
+  c.save();c.translate(x,y);c.scale(s,s);
+  fillRR(c,-110,-70,220,140,14,CREAM);fillRR(c,-110,-70,220,140,14,'#000',.0);
+  // label: a ruled strip with the code handwritten on it
+  fillRR(c,-92,-58,184,50,6,'#fff',.55);c.strokeStyle='#0a6e39';c.globalAlpha=.55;c.lineWidth=1;for(let k=0;k<2;k++){c.beginPath();c.moveTo(-86,-24+k*0);c.lineTo(86,-24);c.stroke()}c.globalAlpha=1;
+  for(let i=0;i<6;i++){const a=clamp((o.code-i));if(a>0)txt(c,CODE[i],-74+i*25,-26,33,INK,'center','700',a)}
+  if(o.stamp>0){c.save();c.translate(84,-34);c.rotate(-.35);c.globalAlpha=o.stamp;c.strokeStyle=G;c.lineWidth=3;c.beginPath();c.arc(0,0,17,0,7);c.stroke();c.beginPath();c.moveTo(-8,0);c.lineTo(-2,7);c.lineTo(9,-8);c.stroke();c.restore();c.globalAlpha=1}
+  // the window and the reels
+  fillRR(c,-70,-2,140,48,24,INK);
+  [-38,38].forEach((rx,k)=>{const pack=lerp(k?9:21,k?21:9,o.prog);c.fillStyle=TAPE;c.beginPath();c.arc(rx,22,pack,0,7);c.fill();
+    c.save();c.translate(rx,22);c.rotate(o.ang*(k?1:1));c.fillStyle=k?G:CREAM;c.beginPath();c.arc(0,0,8.5,0,7);c.fill();c.fillStyle=INK;for(let q=0;q<6;q++){c.rotate(Math.PI/3);c.fillRect(-1.1,-6.8,2.2,3.4)}c.restore()});
+  c.strokeStyle=TAPE;c.lineWidth=1.4;c.beginPath();c.moveTo(-38,22+Math.min(21,lerp(9,21,1-o.prog)));c.lineTo(38,22+Math.min(21,lerp(9,21,o.prog)));c.stroke();
+  fillRR(c,-52,52,104,14,3,'#d9caa8');
+  c.restore()}
+rig('B  mixtape that drops through the hinge',(top,bot,ph,ms)=>{
+  const ang=ms/900;
+  let cy=104,cx=200,s=.78,prog=ph.p==='code'?ph.f:ph.p==='ask'?0:1,code=ph.p==='ask'?0:ph.p==='code'?ph.t/110/1+ -0:6,stamp=0;
+  if(ph.p==='code')code=clamp(ph.t/110,0,6.0);
+  if(ph.p==='ask'){cx=200;cy=104+Math.sin(ms/500)*2;code=0}
+  // the drop: lift, then through the hinge, landing on the touchscreen
+  let onBot=false,by=0;
+  if(ph.p==='pair'){const u=ph.f;stamp=ease((u-.1)/.15);
+    const d=easeIO((u-.28)/.55);cy=104+d*330;s=.78-d*.1;
+    if(d>0)onBot=true;by=cy-250}
+  if(ph.p==='hold'){onBot=true;by=104;s=.68;stamp=1;cy=-999}
+  if(!onBot||cy<250)cassette(top,cx,cy,s,{code,prog,ang:ph.p==='hold'?0:ang,stamp});
+  if(ph.p==='pair'&&onBot)cassette(bot,160,by,s,{code:6,prog:1,ang:ms/900,stamp:1});
+  if(ph.p==='hold')cassette(bot,160,104,.68,{code:6,prog:1,ang:0,stamp:1});
+  if(ph.p==='code'||ph.p==='ask'){txt(top,'spotify.com/pair',200,34,12,WHITE,'center','400',.7);clockText(top,200,222,ph.p==='code'?ph.f:0)}
+  if(ph.p==='ask')txt(top,'Asking Spotify',200,34,12,WHITE,'center','400',.7);
+  if(ph.p==='code'||ph.p==='ask'){strokeRR(bot,70,52,180,110,12,'#fff',1.4,.18+.1*Math.sin(ms/500));bot.setLineDash&&0;txt(bot,'slot',160,112,11,WHITE,'center','400',.0)}
+  if(ph.p==='pair'||ph.p==='hold')txt(bot,'Linked',160,206,13,G,'center','700',clamp((ph.p==='hold')?1:(ph.f-.7)/.2))});
+
+// ================= C: exchange arrows around the code ================================================================
+rig('C  the exchange around the code',(top,bot,ph,ms)=>{
+  const P=50,X0=200-P*2.5;
+  const ai=ph.p==='ask'?0:ph.p==='code'?ph.t:9999;
+  // the arrows: long, sliding through a window, opposite ways
+  const lock=ph.p==='pair'?easeIO(ph.f/.55):ph.p==='hold'?1:0;
+  const run=(y,dir,col)=>{ // a dashed arrow whose dashes travel
+    top.save();top.strokeStyle=col;top.fillStyle=col;top.lineWidth=3;top.lineCap='round';
+    const w=260*(1-lock*.75);const x0=200-w/2,x1=200+w/2;
+    const off=(ms/40)%22*dir*(1-lock);
+    top.setLineDash([12,10]);top.lineDashOffset=-off;top.beginPath();top.moveTo(x0,y);top.lineTo(x1,y);top.stroke();top.setLineDash([]);
+    const hx=dir>0?x1:x0;top.beginPath();top.moveTo(hx-dir*10,y-9);top.lineTo(hx+dir*6,y);top.lineTo(hx-dir*10,y+9);top.closePath();top.fill();top.restore()};
+  const a=ph.p==='ask'?clamp(ph.f*2):1;
+  top.globalAlpha=a;
+  const col=lock>.5?G:CREAM;
+  run(52+lock*40,1,col);run(176-lock*40,-1,col);top.globalAlpha=1;
+  cells(top,X0,P,84,42,60,i=>CODE[i],i=>ph.p==='ask'?0:ph.p==='code'?ease((ph.t-i*90)/320):1-lock);
+  if(lock>.55){const k=ease((lock-.55)/.45);top.save();top.translate(200,114);top.strokeStyle=G;top.lineWidth=7;top.lineCap='round';top.lineJoin='round';top.globalAlpha=k;top.beginPath();top.moveTo(-24,2);top.lineTo(-7,20);top.lineTo(26,-18);top.stroke();top.restore();top.globalAlpha=1}
+  txt(top,ph.p==='ask'?'Asking Spotify':ph.p==='code'?'spotify.com/pair':'',200,26,12,WHITE,'center','400',.7);
+  // touchscreen: the ring, emptying
+  const f=ph.p==='code'?ph.f:ph.p==='ask'?0:1;
+  arc(bot,160,100,52,0,6.283,'#fff',5,.1);
+  if(ph.p==='code'||ph.p==='ask')arc(bot,160,100,52,-Math.PI/2,-Math.PI/2+6.283*(1-f),G,5);
+  if(ph.p==='pair'||ph.p==='hold'){arc(bot,160,100,52,0,6.283,G,5,1);}
+  clockText(bot,160,106,f,'center',ph.p==='code'||ph.p==='ask'?.9:0);
+  exch(bot,160,100,ph.p==='pair'||ph.p==='hold'?3.4:0,G,1.8);
+  if(ph.p==='code')txt(bot,'Waiting for you',160,186,12,WHITE,'center','400',.7);
+  if(ph.p==='pair'||ph.p==='hold')txt(bot,'Linked',160,186,13,G,'center','700')});
+
+// ================= D: a ticket that tears, the stub drops through the hinge ===========================================
+function ticket(c,x,y,o){ // centre; o.tear 0..1 splits the stub away; o.code count; o.stubDx/Dy
+  c.save();c.translate(x,y);
+  const W=300,H=96,SX=-W/2+74; // the perforation
+  // body (right part)
+  c.save();c.translate(o.bodyDx||0,0);c.globalAlpha=o.bodyA??1;
+  c.fillStyle=CREAM;c.beginPath();c.moveTo(SX+4,-H/2);c.lineTo(W/2-10,-H/2);c.arcTo(W/2,-H/2,W/2,-H/2+10,10);c.lineTo(W/2,H/2-10);c.arcTo(W/2,H/2,W/2-10,H/2,10);c.lineTo(SX+4,H/2);c.closePath();c.fill();
+  for(let i=0;i<6;i++){const a=clamp((o.code-i));if(a>0)txt(c,CODE[i],SX+34+i*32,14,40,INK,'center','700',a*(o.bodyA??1))}
+  txt(c,'ADMIT ONE',SX+34,-24,9,'#6d6450','left','700',.9*(o.bodyA??1));
+  c.globalAlpha=1;c.restore();
+  // the stub (left part)
+  c.save();c.translate(o.sdx||0,o.sdy||0);c.rotate(o.rot||0);
+  c.fillStyle=CREAM;c.beginPath();c.moveTo(-W/2+10,-H/2);c.lineTo(SX,-H/2);c.lineTo(SX,H/2);c.lineTo(-W/2+10,H/2);c.arcTo(-W/2,H/2,-W/2,H/2-10,10);c.lineTo(-W/2,-H/2+10);c.arcTo(-W/2,-H/2,-W/2+10,-H/2,10);c.closePath();c.fill();
+  c.fillStyle=o.green?G:'#e2d5bb';c.beginPath();c.arc(-W/2+37,0,25,0,7);c.fill();exch(c,-W/2+37,0,1.5,o.green?INK:'#9a8f78',1.8);
+  c.restore();
+  // the perforation, until it's torn
+  if(!o.torn){c.strokeStyle='#b9ad92';c.setLineDash([3,4]);c.lineWidth=1.4;c.beginPath();c.moveTo(SX,-H/2+4);c.lineTo(SX,H/2-4);c.stroke();c.setLineDash([])}
+  c.restore()}
+rig('D  a ticket that tears',(top,bot,ph,ms)=>{
+  const code=ph.p==='ask'?0:ph.p==='code'?clamp(ph.t/110,0,6):6;
+  const f=ph.p==='code'?ph.f:ph.p==='ask'?0:1;
+  if(ph.p==='ask'||ph.p==='code'){
+    const sway=Math.sin(ms/900)*1.5;
+    ticket(top,200,112+sway,{code,green:false});
+    // the time: punched holes along the foot, one more gone each moment
+    for(let i=0;i<12;i++){const alive=ph.p==='ask'||(i<12*(1-f));top.globalAlpha=alive?.8:.12;top.fillStyle=alive?CREAM:'#fff';top.beginPath();top.arc(88+i*20.3,190,3.6,0,7);top.fill();top.globalAlpha=1}
+    txt(top,ph.p==='ask'?'Asking Spotify':'spotify.com/pair',200,34,12,WHITE,'center','400',.7);clockText(top,200,214,f);
+    strokeRR(bot,80,70,160,72,10,'#fff',1.4,.14+.08*Math.sin(ms/500))}
+  else if(ph.p==='pair'){
+    const u=ph.f,tear=easeIO((u-.05)/.2),drop=easeIO((u-.3)/.5);
+    // the body tears off to the right and fades; the stub rotates and falls through the hinge
+    const sy=drop*330;
+    if(sy<260)ticket(top,200,112,{code:6,torn:tear>.05,sdx:-tear*12,sdy:sy,rot:-tear*.12-drop*.1,bodyDx:tear*60,bodyA:1-clamp((u-.15)/.35),green:u>.2});
+    if(sy>100){const by=sy-330+112;const st=ticket;
+      bot.save();bot.translate(160,by+0);bot.rotate(-.1+drop*.1);
+      const ox=-(200-37),W=300;
+      bot.fillStyle=CREAM;rr(bot,-W/2+2,-48,74,96,8);bot.fill();
+      bot.fillStyle=G;bot.beginPath();bot.arc(-W/2+39,0,25,0,7);bot.fill();exch(bot,-W/2+39,0,1.5,INK,1.8);bot.restore()}}
+  else{
+    // hold: the stub sits on the touchscreen, a check stamped, "Linked"
+    bot.save();bot.translate(160,112);fillRR(bot,-37,-48,74,96,8,CREAM);bot.fillStyle=G;bot.beginPath();bot.arc(0,0,25,0,7);bot.fill();exch(bot,0,0,1.5,INK,1.8);bot.restore();
+    txt(bot,'Linked',160,200,13,G,'center','700')}
+  if(ph.p==='pair'&&ph.f>.75)txt(bot,'Linked',160,200,13,G,'center','700',clamp((ph.f-.75)/.15))});
+
+// ---- run ---------------------------------------------------------------------------------------------------------
+let t0=performance.now();
+const fix=/t=(\d+)/.exec(location.hash);
+document.getElementById('replay').onclick=()=>{t0=performance.now()};
+function frame(now){const ms=fix?+fix[1]:(now-t0);const q=Math.floor(ms/16.7)*16.7;ideas.forEach(f=>f(q));
+  const ph=phase(ms);document.getElementById('ph').textContent={ask:'asking',code:'code up',pair:'paired',hold:'linked'}[ph.p];
+  if(!fix)requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script>

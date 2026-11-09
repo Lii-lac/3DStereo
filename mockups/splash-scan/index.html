@@ -1,0 +1,119 @@
+<!doctype html><meta charset="utf-8"><title>3DStereo splash, reading the songs again</title>
+<style>
+html{background:#171717}
+body{margin:0;padding:34px 30px 50px;color:#d8d2c4;font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+.top{display:flex;gap:18px;align-items:center;margin:0 0 30px}
+button{font:inherit;color:#d8d2c4;background:#262626;border:0;border-radius:16px;padding:6px 18px;cursor:pointer}
+button:hover{background:#303030}
+.rig{display:flex;flex-direction:column;align-items:center;gap:56px}
+svg.scr{display:block;background:#121212;box-shadow:0 0 0 8px #0a0a0a,0 14px 34px #000a}
+#bot{font-family:"Segoe UI",system-ui,sans-serif}
+</style>
+<div class="top"><button id="replay">again</button><span id="pct" style="color:#7d786c;font-variant-numeric:tabular-nums"></span></div>
+<div class="rig"><svg class="scr" id="top" width="400" height="240" viewBox="0 0 400 240"></svg><svg class="scr" id="bot" width="320" height="240" viewBox="0 0 320 240"></svg></div>
+<svg width="0" height="0" style="position:absolute"><defs><path id="b33" d="M197 422H262Q318 422 344 444Q369 465 369 497V504Q369 542 344 565Q319 588 275 588Q233 588 196 566Q159 545 133 505L39 593Q66 628 99 654Q132 680 176 695Q220 710 280 710Q355 710 410 687Q466 664 496 622Q527 581 527 525Q527 458 488 418Q448 378 394 368V362Q436 355 468 334Q501 312 520 277Q539 242 539 194Q539 132 506 86Q472 39 412 14Q353 -12 274 -12Q203 -12 154 6Q105 25 72 56Q39 87 16 122L127 208Q150 165 184 138Q218 110 274 110Q325 110 354 136Q382 162 382 205V211Q382 254 350 276Q317 297 260 297H197Z"/><path id="b44" d="M77 0V698H340Q433 698 502 659Q571 620 609 542Q647 465 647 349Q647 233 609 156Q571 78 502 39Q433 0 340 0ZM229 135H340Q385 135 418 152Q451 169 468 204Q486 240 486 295V403Q486 459 468 494Q451 529 418 546Q385 563 340 563H229Z"/><path id="b53" d="M303 -12Q212 -12 148 20Q83 52 38 101L138 202Q173 162 218 142Q262 122 313 122Q369 122 396 145Q423 168 423 206Q423 225 416 240Q410 256 392 266Q375 277 342 281L273 290Q200 300 152 326Q105 353 82 396Q59 440 59 498Q59 561 90 608Q122 656 180 683Q239 710 321 710Q400 710 460 684Q520 659 563 612L462 510Q437 539 402 558Q366 576 312 576Q261 576 236 558Q211 540 211 508Q211 484 220 469Q228 454 246 446Q265 438 294 433L363 422Q435 411 482 385Q529 359 552 317Q575 275 575 215Q575 148 544 97Q512 46 451 17Q390 -12 303 -12Z"/><path id="r65" d="M279 -12Q209 -12 157 22Q105 55 76 116Q47 176 47 258Q47 340 76 400Q105 461 157 494Q209 528 279 528Q348 528 398 496Q448 463 475 406Q502 349 502 276V238H131V214Q131 147 172 102Q212 58 284 58Q333 58 370 81Q406 104 426 147L483 106Q458 54 405 21Q352 -12 279 -12ZM279 461Q236 461 202 441Q169 421 150 386Q131 350 131 305V298H416V309Q416 355 399 389Q382 423 351 442Q320 461 279 461Z"/><path id="r6f" d="M280 -12Q211 -12 158 22Q106 55 76 116Q47 176 47 258Q47 340 76 400Q106 461 158 494Q211 528 280 528Q349 528 402 494Q454 461 484 400Q513 340 513 258Q513 176 484 116Q454 55 402 22Q349 -12 280 -12ZM280 59Q345 59 386 99Q427 139 427 221V295Q427 377 386 417Q345 457 280 457Q216 457 174 417Q133 377 133 295V221Q133 139 174 99Q216 59 280 59Z"/><path id="r72" d="M165 0H85V516H165V421H170Q179 446 198 468Q217 489 247 502Q277 516 319 516H350V436H303Q260 436 229 424Q198 413 182 394Q165 375 165 350Z"/><path id="r74" d="M299 0H199Q158 0 136 24Q114 48 114 85V446H29V516H77Q103 516 112 526Q122 537 122 563V659H194V516H307V446H194V70H299Z"/><g id="art">
+
+<g transform="translate(200 98) scale(1.15) translate(-203 -65)"><rect x="166" y="28" width="80" height="80" rx="17.6" fill="#0a6e39"/><rect x="160" y="22" width="80" height="80" rx="17.6" fill="#1ed760"/><g transform="rotate(-8 198.00 60.00)"><rect x="171.952" y="44.608" width="59.2" height="37.888" rx="4.736" fill="#0a6e39"/><rect x="171.36" y="44.016" width="59.2" height="37.888" rx="4.736" fill="#0a6e39"/><rect x="170.768" y="43.424" width="59.2" height="37.888" rx="4.736" fill="#0a6e39"/><rect x="170.176" y="42.832" width="59.2" height="37.888" rx="4.736" fill="#0a6e39"/><rect x="169.584" y="42.24" width="59.2" height="37.888" rx="4.736" fill="#0a6e39"/><rect x="168.992" y="41.648" width="59.2" height="37.888" rx="4.736" fill="#0a6e39"/><rect x="168.4" y="41.056" width="59.2" height="37.888" rx="4.736" fill="#f2e6cf"/><rect x="174.32" y="45.9814" width="47.36" height="3.7888" rx="1.8944" fill="#1ed760"/><rect x="179.056" y="52.4224" width="37.888" height="12.8819" rx="6.44096" fill="#121212"/><circle cx="185.497" cy="58.8634" r="4.63749" fill="#1ed760"/><circle cx="185.497" cy="58.8634" r="1.94775" fill="#121212"/><circle cx="210.503" cy="58.8634" r="4.63749" fill="#f2e6cf"/><circle cx="210.503" cy="58.8634" r="1.94775" fill="#121212"/><path d="M181.424 78.944L185.568 70.6086L210.432 70.6086L214.576 78.944Z" fill="#d9caa8"/></g></g>
+<g transform="translate(200 188) scale(1.2) translate(-85 -64)"><g transform="translate(12.00 72.00) scale(0.03000 -0.03000)" fill="#1ed760"><use href="#b33" x="0"/></g><g transform="translate(30.00 72.00) scale(0.03000 -0.03000)" fill="#ffffff"><use href="#b44" x="0"/><use href="#b53" x="697"/></g><g transform="translate(69.63 72.00) scale(0.03000 -0.03000)" fill="#ffffff"><use href="#r74" x="0"/><use href="#r65" x="351"/><use href="#r72" x="900"/><use href="#r65" x="1267"/><use href="#r6f" x="1816"/></g></g>
+</g></defs></svg>
+<script>
+const G = '#1ed760', INK = '#121212', MUTE = '#7d786c', PAPER = '#f2e6cf';
+const NS = 'http://www.w3.org/2000/svg';
+const el = (p, n, a) => { const e = document.createElementNS(NS, n); for (const k in (a || {})) e.setAttribute(k, a[k]); p.appendChild(e); return e; };
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+// the scan, as the splash is told it: files done of N, in bursts with pauses between (the card is slower on some)
+const N = 553, SCAN_MS = 9000, HOLD_MS = 1700, TICK = 100;
+function scanAt(ms) {
+  const t = Math.min(1, ms / SCAN_MS);
+  const w = [0, .07, .09, .31, .36, .62, .66, .93, 1];
+  const x = Math.min(w.length - 2, t * (w.length - 1) | 0), f = t * (w.length - 1) - x;
+  return lerp(w[x], w[x + 1], f < .5 ? 0 : ease((f - .5) * 2));
+}
+
+// what's on the card, in the order the folders come
+const FILES = [
+  "Alex G - Gnaw.mp3", "Alex G - Treehouse.flac", "Alex G - Sarah.flac",
+  "Barry Manilow - Mandy.flac", "Barry Manilow - Copacabana.mp3",
+  "Chappell Roan - Pink Pony Club.flac", "Chappell Roan - Good Luck, Babe!.opus", "Chappell Roan - Casual.flac",
+  "Clairo - Bags.flac", "Clairo - Sofia.flac", "Clairo - Pretty Girl.m4a",
+  "Cocteau Twins - Heaven or Las Vegas.flac", "Cocteau Twins - Cherry-coloured Funk.flac",
+  "Dominic Fike - 3 Nights.flac", "Dominic Fike - Phone Numbers.mp3",
+  "Joe Hisaishi - One Summer's Day.flac", "Joe Hisaishi - The Path of the Wind.flac", "Joe Hisaishi - Merry-Go-Round of Life.flac",
+  "Mac DeMarco - Chamber of Reflection.flac", "Mac DeMarco - Salad Days.flac", "Mac DeMarco - Ode to Viceroy.mp3",
+  "Olivia Rodrigo - drivers license.flac", "Olivia Rodrigo - vampire.flac", "Olivia Rodrigo - good 4 u.opus",
+  "Sabrina Carpenter - Espresso.flac", "Sabrina Carpenter - Please Please Please.flac",
+  "Stereolab - Ping Pong.flac", "Stereolab - French Disko.flac", "Stereolab - Cybele's Reverie.flac",
+  "The Cranberries - Linger.flac", "The Cranberries - Zombie.mp3", "The Cranberries - Dreams.flac",
+  "Weezer - Say It Ain't So.flac", "Weezer - Buddy Holly.flac",
+];
+const STEP = 12;   // one new name for every 12 files read, so the list moves about four times a second at most
+
+// ---- top: the splash, and nine bars that light up and dance ------------------------------------------------------------------------
+const tsv = document.getElementById('top');
+el(tsv, 'rect', { width: 400, height: 240, fill: INK });
+el(tsv, 'use', { href: '#art' });
+const NB = 9, GAP = 10, X0 = 200 - (NB - 1) * GAP / 2, BASE = 226, bars = [];
+// A level meter, not a staircase: every lit bar bounces on its own mix of beats, the middle ones livelier than the edges,
+// between a 5 px stub and 17 px. The reading only decides how many are lit.
+const ENV = i => .62 + .38 * Math.sin(Math.PI * (i + .5) / NB);
+const wave = (i, t) => {
+  const s = .5 + .5 * (.55 * Math.sin(t / 210 + i * 1.9) + .3 * Math.sin(t / 113 + i * 3.7 + 1) + .15 * Math.sin(t / 61 + i * 5.3));
+  return clamp(s * ENV(i) * 1.12);
+};
+for (let i = 0; i < NB; i++) bars.push(el(tsv, 'rect', { x: X0 + i * GAP - 2.5, width: 5, rx: 2.5, fill: '#262626', opacity: 0 }));
+
+// ---- bottom: the count, and the files going by ---------------------------------------------------------------------
+const bot = document.getElementById('bot');
+el(bot, 'rect', { width: 320, height: 240, fill: INK });
+const grp = el(bot, 'g', { opacity: 0 });
+el(grp, 'text', { x: 160, y: 58, 'text-anchor': 'middle', fill: MUTE, 'font-size': 13, 'letter-spacing': '.6', 'font-weight': 600 }).textContent = 'Reading songs';
+const count = el(grp, 'text', { x: 160, y: 112, 'text-anchor': 'middle', 'font-weight': 700, style: 'font-variant-numeric:tabular-nums' });
+const cDone = el(count, 'tspan', { 'font-size': 46, fill: '#fff' });
+const cOf = el(count, 'tspan', { 'font-size': 20, fill: MUTE, 'font-weight': 600 });
+const ROWS = [{ y: 150, o: .16 }, { y: 169, o: .3 }, { y: 188, o: .55 }, { y: 207, o: 1 }];
+const rows = ROWS.map(r => {
+  const t = el(grp, 'text', { x: 160, y: r.y, 'text-anchor': 'middle', 'font-size': 11.5, opacity: r.o });
+  return { name: el(t, 'tspan', { fill: r.o === 1 ? PAPER : '#cfc9bb' }), ext: el(t, 'tspan', { fill: G, opacity: .8 }) };
+});
+const fit = s => s.length > 41 ? s.slice(0, 22) + '…' + s.slice(-18) : s;   // a long one loses its middle, not its ending
+let lastK = -1;
+function files(done) {
+  const k = Math.floor(done / STEP);
+  if (k === lastK) return; lastK = k;
+  rows.forEach((r, j) => {
+    const n = k - (rows.length - 1 - j);
+    if (n < 0) { r.name.textContent = ''; r.ext.textContent = ''; return; }
+    const f = FILES[n % FILES.length], d = f.lastIndexOf('.');
+    r.name.textContent = fit(f.slice(0, d)); r.ext.textContent = f.slice(d);
+  });
+}
+
+// ---- the timeline -------------------------------------------------------------------------------------------------
+let t0 = performance.now();
+const fix = /t=(\d+)/.exec(location.hash);   // page.html#t=3200 freezes it at that moment (for stills)
+document.getElementById('replay').onclick = () => { t0 = performance.now(); lastK = -1; };
+function frame(now) {
+  if (fix) now = t0 + +fix[1];
+  const ms = (now - t0) % (SCAN_MS + HOLD_MS);
+  const q = Math.floor(ms / TICK) * TICK;             // the device redraws about ten times a second: everything steps like that
+  const p = ms >= SCAN_MS ? 1 : scanAt(q);
+  const done = Math.round(p * N);
+  const hold = ms - SCAN_MS, fold = ms >= SCAN_MS + 1500 ? clamp((ms - SCAN_MS - 1500) / 200) : 0;
+  const on = p > 0 ? 1 : 0, lit = p * NB;
+  const qt = Math.floor(now / TICK) * TICK;           // the beat steps with the screen too
+  bars.forEach((b, i) => {
+    const a = clamp(lit - i), h = (5 + 12 * wave(i, qt) * a) * (1 - fold);   // lit once the reading has reached it; it eases in, then dances
+    b.setAttribute('opacity', on && h > .6 ? 1 : 0); b.setAttribute('fill', a > 0 ? G : '#262626');
+    b.setAttribute('height', Math.max(h, .1)); b.setAttribute('y', BASE - h);
+  });
+  grp.setAttribute('opacity', on ? (1 - fold) * clamp(ms / 400) : 0);
+  cDone.textContent = done; cDone.setAttribute('fill', done >= N ? G : '#fff'); cOf.textContent = ' / ' + N;
+  files(done);
+  document.getElementById('pct').textContent = ms >= SCAN_MS ? '' : done + ' / ' + N;
+  if (!fix) requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>

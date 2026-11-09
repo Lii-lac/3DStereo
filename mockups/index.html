@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>3DS Player: four directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Caveat:wght@500;700&family=Figtree:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&family=Oswald:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#efe7d9;--ink:#1c1515;--blood:#8a0f1f;--s:2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif}
+header{padding:40px 56px 14px;border-bottom:3px solid var(--ink);display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+header h1{font:italic 500 56px/1 "Bodoni Moda",serif;margin:0;letter-spacing:-.01em}
+header h1 b{font-style:normal;font-weight:700;color:var(--blood)}
+.legend{display:flex;gap:28px;font:600 12px/1.3 Inter;letter-spacing:.08em;text-transform:uppercase}
+.legend span{display:flex;gap:8px;align-items:center}
+.legend i{font-style:normal;color:var(--blood);font-size:15px}
+section{display:flex;gap:56px;align-items:flex-start;padding:48px 56px;border-bottom:1px solid #1c151533}
+.cap{width:260px;flex:none;padding-top:8px}
+.cap .n{font:500 84px/.9 "Bodoni Moda",serif;color:var(--blood)}
+.cap h2{font:italic 500 32px/1.05 "Bodoni Moda",serif;margin:10px 0 12px}
+.cap p{margin:0;font-size:14px;color:#1c1515b8}
+footer{padding:20px 56px 48px;font:600 11px Inter;letter-spacing:.12em;text-transform:uppercase;color:#1c151599}
+
+/* the console */
+.dev{width:calc(480px*var(--s));height:calc(612px*var(--s));flex:none}
+.shell{width:480px;transform:scale(var(--s));transform-origin:0 0;--body:#1d1d20;--edge:#0d0d0f;--btn:#0d0d0f}
+.lid{height:296px;background:var(--body);border-radius:22px 22px 10px 10px;position:relative;box-shadow:inset 0 0 0 2px var(--edge)}
+.hinge{height:16px;margin:0 36px;background:var(--edge);border-radius:0 0 8px 8px}
+.base{height:300px;background:var(--body);border-radius:10px 10px 26px 26px;position:relative;box-shadow:inset 0 0 0 2px var(--edge)}
+.scr{position:absolute;overflow:hidden;background:#000;box-shadow:0 0 0 6px #0b0b0c}
+.top{left:40px;top:28px;width:400px;height:240px}
+.bot{left:80px;top:30px;width:320px;height:240px}
+.cpad{position:absolute;left:20px;top:38px;width:44px;height:44px;border-radius:50%;background:var(--btn);box-shadow:inset 0 0 0 7px #ffffff12}
+.dpad{position:absolute;left:27px;top:122px;width:30px;height:30px;background:linear-gradient(var(--btn),var(--btn)) center/10px 30px no-repeat,linear-gradient(var(--btn),var(--btn)) center/30px 10px no-repeat}
+.abxy{position:absolute;right:16px;top:42px;width:48px;height:48px}
+.abxy i{position:absolute;width:15px;height:15px;border-radius:50%;background:var(--btn)}
+.abxy i:nth-child(1){left:16px;top:0}.abxy i:nth-child(2){left:0;top:16px}.abxy i:nth-child(3){right:0;top:16px}.abxy i:nth-child(4){left:16px;bottom:0}
+.ssb{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:24px}
+.ssb i{width:24px;height:5px;border-radius:3px;background:var(--btn)}
+.spk{position:absolute;top:120px;width:8px;height:40px;background:radial-gradient(circle,var(--btn) 1.3px,transparent 1.6px) 0 0/8px 8px}
+.spk.l{left:16px}.spk.r{right:16px}
+button{font:inherit;color:inherit}
+.scroll{position:relative;scrollbar-width:none}
+.scroll::-webkit-scrollbar{display:none}
+[data-act]{cursor:pointer}
+:focus-visible{outline:2px solid #ffb000;outline-offset:-2px}
+
+/* ---------- 1 · Spotify ---------- */
+.d1 .shell{--body:#1b1b1d;--edge:#0a0a0b;--btn:#0a0a0b}
+.s1t{position:absolute;inset:0;color:#fff;font-family:Figtree,sans-serif;background:linear-gradient(180deg,color-mix(in srgb,var(--c) 80%,#000) 0%,#121212 90%)}
+.s1h{position:absolute;top:10px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:.14em;color:#ffffffb0}
+.s1h b{color:#fff}
+.s1art{position:absolute;left:20px;top:30px;width:144px;height:144px;border-radius:4px;box-shadow:0 8px 24px #0009}
+.s1m{position:absolute;left:180px;top:40px;right:16px}
+.s1ti{font-weight:800;font-size:21px;line-height:1.08}
+.s1ar{font-size:12px;color:#b3b3b3;margin-top:4px}
+.s1q{margin-top:14px;font-size:10px;color:#b3b3b3;display:flex;gap:6px;align-items:center}
+.s1bd{border:1px solid currentColor;border-radius:3px;padding:1px 4px;font-weight:800;font-size:7.5px;letter-spacing:.08em}
+.s1bd.sp{color:#1ed760}.s1bd.sd{color:#fff}
+.s1d{margin-top:10px;font-size:11px;font-weight:700;display:flex;gap:5px;align-items:center}
+.s1d.sp{color:#1ed760}.s1d svg{width:13px;height:13px}
+.s1p{position:absolute;left:20px;right:20px;top:190px;height:16px;display:flex;align-items:center}
+.s1bar{position:relative;height:4px;width:100%;background:#ffffff3d;border-radius:2px}
+.s1bar .fill{position:absolute;left:0;top:0;bottom:0;width:calc(var(--f,0)*100%);background:#fff;border-radius:2px}
+.s1p:hover .fill{background:#1ed760}
+.s1bar .knob{position:absolute;top:50%;left:calc(var(--f,0)*100%);width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;opacity:0;transition:opacity .15s}
+.s1p:hover .knob{opacity:1}
+.s1tt{position:absolute;left:20px;right:20px;top:208px;display:flex;justify-content:space-between;font-size:9px;color:#b3b3b3;font-variant-numeric:tabular-nums}
+.s1b{position:absolute;inset:0;background:#121212;color:#fff;font-family:Figtree,sans-serif;display:flex;flex-direction:column}
+.s1chips{height:30px;display:flex;gap:6px;align-items:center;padding:0 10px;flex:none}
+.s1chips button{all:unset;cursor:pointer;font:600 10px Figtree;padding:3px 10px;border-radius:999px;background:#2a2a2a;transition:background .15s}
+.s1chips button:hover{background:#3a3a3a}
+.s1chips .on,.s1chips .on:hover{background:#1ed760;color:#000}
+.s1list{flex:1;overflow-y:auto;overflow-x:hidden}
+.s1row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;height:34px;padding:0 10px;cursor:pointer}
+.s1row:hover{background:#ffffff10}.s1row:active{background:#ffffff22}
+.s1row .a,.s1mini .a{width:26px;height:26px;flex:none;border-radius:2px}
+.s1row .tx,.s1mini .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.s1row b,.s1mini b{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s1row small,.s1mini small{font-size:9px;color:#b3b3b3;display:flex;gap:3px;align-items:center;white-space:nowrap}
+.s1row small svg,.s1mini small svg{width:9px;height:9px;flex:none}
+.s1mini small.sp{color:#1ed760}
+.s1row.cur b{color:#1ed760}
+.s1row .du{font-size:9px;color:#b3b3b3;font-variant-numeric:tabular-nums}
+.s1mini{position:relative;height:40px;margin:0 6px;border-radius:6px;background:color-mix(in srgb,var(--c) 55%,#202020);display:flex;align-items:center;gap:6px;padding:0 4px 0 6px;flex:none;overflow:hidden}
+.s1mini button{all:unset;cursor:pointer;width:24px;height:28px;display:grid;place-items:center;color:#fff;border-radius:4px}
+.s1mini button:active{transform:scale(.9)}
+.s1mini button svg{width:13px;height:13px}.s1mini .pp svg{width:17px;height:17px}
+.s1mini .mbar{position:absolute;left:6px;right:6px;bottom:0;height:2px;background:#ffffff30}
+.s1mini .mbar i{display:block;height:100%;width:calc(var(--f,0)*100%);background:#fff}
+.s1nav{height:32px;display:flex;justify-content:space-around;align-items:center;font-size:8px;color:#b3b3b3;flex:none}
+.s1nav span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.s1nav svg{width:13px;height:13px}.s1nav .on{color:#fff}
+
+/* ---------- 2 · tape deck ---------- */
+.d2 .shell{--body:#ebe5da;--edge:#c8bfb0;--btn:#c8bfb0}
+.c2svg{display:block;width:400px;height:240px}
+.hand{font-family:Caveat,cursive;fill:#23336b}
+.c2b{position:absolute;inset:0;background:#2b2622;display:flex;flex-direction:column}
+.c2j{flex:1;overflow-y:auto;margin:8px 8px 0;border-radius:2px 2px 0 0;background:linear-gradient(90deg,transparent 30px,#d9867a 30px 31px,transparent 31px),repeating-linear-gradient(#f8f2e4 0 21px,#d9cfbd 21px 22px);background-attachment:local}
+.c2side{height:22px;font:700 7.5px/24px Inter;letter-spacing:.18em;color:#8a7d6b;padding-left:38px}
+.c2row{all:unset;box-sizing:border-box;display:flex;width:100%;height:22px;align-items:flex-end;padding:0 10px 2px 4px;gap:8px;cursor:pointer;font:500 16px/1 Caveat,cursive;color:#23336b}
+.c2row .no{width:24px;font-size:13px;color:#8a7d6b;text-align:center}
+.c2row .tt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 2px}
+.c2row .du{font-size:14px}
+.c2row:hover .tt{color:#8a0f1f}
+.c2row.cur .tt{background:linear-gradient(transparent 52%,#f3b2a0 52% 92%,transparent 92%);font-weight:700}
+.c2keys{height:74px;display:flex;gap:6px;padding:8px 10px 14px;flex:none;background:#2b2622}
+.k{all:unset;flex:1;position:relative;background:linear-gradient(#f4f2ec,#bdb7ad);border-radius:3px 3px 6px 6px;box-shadow:0 6px 0 #6d655c,inset 0 -2px 0 #9a9389;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#2b2622;font:700 7.5px Inter;letter-spacing:.14em;cursor:pointer;transition:transform .07s,box-shadow .07s}
+.k svg{width:15px;height:15px}
+.k:active,.k.down{transform:translateY(5px);box-shadow:0 1px 0 #6d655c,inset 0 -1px 0 #9a9389}
+.k .led{position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:#7d746a}
+.k.down .led{background:#ff4a2a;box-shadow:0 0 4px #ff4a2a}
+
+/* ---------- 3 · turntable ---------- */
+.d3 .shell{--body:#3b3047;--edge:#251d2e;--btn:#251d2e}
+.t3svg{display:block;width:400px;height:240px}
+.t3lbl{font:600 7px Oswald;letter-spacing:.12em}
+.t3plate text{font:600 7px Inter;letter-spacing:.14em;fill:#e8d9bf}
+.arm{transition:transform .5s cubic-bezier(.2,.7,.2,1)}
+.t3b{position:absolute;inset:0;display:flex;flex-direction:column;color:#f3e9d8;background:repeating-linear-gradient(90deg,#00000014 0 1px,transparent 1px 9px),repeating-linear-gradient(90deg,#ffffff08 0 2px,transparent 2px 23px),#5a3a24}
+.t3sl{height:76px;display:flex;gap:10px;padding:8px 10px;align-items:center;background:#1d1410;flex:none}
+.t3sl .a{width:60px;height:60px;flex:none;box-shadow:3px 3px 0 #000}
+.t3sl .tx{min-width:0}
+.t3sl b{display:block;font:600 18px/1.02 Oswald;text-transform:uppercase;letter-spacing:.02em}
+.t3sl small{display:block;font:600 8.5px Inter;letter-spacing:.14em;text-transform:uppercase;opacity:.75;margin-top:3px}
+.t3sl em{font-style:normal;display:block;font:700 7.5px Inter;letter-spacing:.12em;color:#ffb199;margin-top:6px;text-transform:uppercase}
+.t3cr{flex:1;overflow-y:auto;overflow-x:hidden;padding:7px 14px 4px 22px}
+.t3sp{all:unset;box-sizing:border-box;display:flex;gap:6px;width:100%;height:21px;margin-bottom:3px;align-items:center;padding:0 8px;font:500 10px Oswald;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:transform .2s ease;box-shadow:0 2px 0 #00000066;white-space:nowrap;overflow:hidden}
+.t3sp .du{margin-left:auto;font:600 8px Inter;font-variant-numeric:tabular-nums}
+.t3sp:hover{transform:translateX(-4px)}
+.t3sp.cur{transform:translateX(-12px);outline:2px solid #f3e9d8}
+.t3ctl{height:40px;display:flex;gap:6px;padding:6px 10px;background:#1d1410;flex:none}
+.t3ctl button{all:unset;cursor:pointer;display:grid;place-items:center;width:44px;background:#2c211b;color:#f3e9d8;border-radius:3px;box-shadow:inset 0 -3px 0 #000}
+.t3ctl button svg{width:13px;height:13px}
+.t3ctl button:active{box-shadow:inset 0 -1px 0 #000;transform:translateY(1px)}
+.t3ctl .ss{flex:1;width:auto;display:flex;gap:8px;align-items:center;justify-content:center;font:600 10px Oswald;letter-spacing:.24em;background:#3a2c24}
+.t3ctl .ss i{width:6px;height:6px;border-radius:50%;background:#5a463a}
+.t3ctl .ss.on i{background:#ff5a3c;box-shadow:0 0 5px #ff5a3c}
+
+/* ---------- 4 · running order (mine) ---------- */
+.d4 .shell{--body:#a01422;--edge:#6a0c15;--btn:#6a0c15}
+.m4t,.m4b{position:absolute;inset:0;color:var(--ink);background:repeating-linear-gradient(45deg,#1c151530 0 1px,transparent 1px 3px),#ece2d1}
+.m4in{position:absolute;inset:6px;background:#f5eee2;border:2px solid var(--ink);display:flex;flex-direction:column}
+.m4look{position:absolute;left:12px;top:12px;width:128px}
+.m4look span{display:block;font:700 8px/1 Inter;letter-spacing:.34em}
+.m4look b{display:block;font:500 104px/.86 "Bodoni Moda",serif;color:var(--blood);letter-spacing:-.05em;margin:8px 0 0 -4px}
+.m4look small{display:block;margin-top:6px;font:700 7.5px Inter;letter-spacing:.28em}
+.m4m{position:absolute;left:146px;top:0;right:0;height:150px;border-left:2px solid var(--ink);padding:12px 14px}
+.m4ti{font:italic 500 25px/1.03 "Bodoni Moda",serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.m4ar{margin-top:8px;font:700 8.5px Inter;letter-spacing:.24em;text-transform:uppercase}
+.m4src{position:absolute;left:14px;right:12px;bottom:10px;font:600 8px/1.35 Inter;letter-spacing:.08em;text-transform:uppercase;border-top:1px solid var(--ink);padding-top:6px;display:flex;gap:6px}
+.m4src i{font-style:normal;color:var(--blood)}
+.m4run{position:absolute;left:0;right:0;top:150px;bottom:0;border-top:2px solid var(--ink)}
+.m4run .lab{position:absolute;left:12px;top:7px;font:700 7px Inter;letter-spacing:.34em}
+.m4trk{position:absolute;left:14px;right:14px;top:22px;height:26px}
+.m4trk .line{position:absolute;left:0;right:0;top:13px;height:3px;background:var(--ink)}
+.m4trk .done{position:absolute;left:0;top:13px;height:3px;width:calc(var(--f,0)*100%);background:var(--blood)}
+.m4trk .tk{position:absolute;top:6px;width:1px;height:6px;background:var(--ink)}
+.m4trk .tk.mj{top:3px;width:2px;height:9px;margin-left:-.5px}
+.m4trk .walk{position:absolute;top:9px;left:calc(var(--f,0)*100%);width:11px;height:11px;margin-left:-5.5px;background:var(--blood);transform:rotate(45deg);box-shadow:0 0 0 2px #f5eee2}
+.m4trk:hover .walk{transform:rotate(45deg) scale(1.25)}
+.m4tt{position:absolute;left:14px;right:14px;bottom:6px;display:flex;justify-content:space-between;font:700 9px Inter;font-variant-numeric:tabular-nums}
+.m4h{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 8px;font:700 7.5px Inter;letter-spacing:.3em;border-bottom:3px solid var(--ink);flex:none}
+.m4list{flex:1;overflow-y:auto;overflow-x:hidden}
+.m4row{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;height:32px;padding:0 8px;border-bottom:1px solid #1c151538;cursor:pointer;transition:background .15s}
+.m4row .no{font:500 18px/1 "Bodoni Moda",serif;width:24px;color:var(--blood)}
+.m4row .tx{flex:1;min-width:0}
+.m4row b{display:block;font:600 11px Inter;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m4row small{display:block;font:600 7.5px Inter;letter-spacing:.16em;text-transform:uppercase;opacity:.7}
+.m4row .sy{font-size:9px;color:var(--blood)}
+.m4row .du{font:600 9px Inter;font-variant-numeric:tabular-nums}
+.m4row.past{color:#1c151570}.m4row.past .no{color:#8a0f1f70}
+.m4row:hover:not(.cur){background:#1c15150f}
+.m4row.cur{background:var(--blood);color:#f5eee2}.m4row.cur .no,.m4row.cur .sy{color:#f5eee2}
+.m4ctl{height:40px;display:flex;border-top:3px solid var(--ink);flex:none}
+.m4ctl button{all:unset;flex:1;display:flex;gap:7px;align-items:center;justify-content:center;cursor:pointer;border-right:2px solid var(--ink);font:700 8px Inter;letter-spacing:.26em;transition:background .1s,color .1s}
+.m4ctl button:last-child{border-right:0}
+.m4ctl button svg{width:13px;height:13px}
+.m4ctl .main{flex:1.8;background:var(--blood);color:#f5eee2}
+.m4ctl button:active{background:var(--ink);color:#f5eee2}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pocket <b>3DS</b> player</h1>
+  <div class="legend">
+    <span><i>◆</i>Spotify · plays on your PC, the 3DS drives it</span>
+    <span><i>■</i>Your file · on the SD card, plays on the 3DS</span>
+  </div>
+</header>
+
+<section>
+  <div class="dev d1" data-design="spotify" data-start="0"></div>
+  <div class="cap"><div class="n">01</div><h2>Spotify, shrunk</h2><p>Now playing up top, library and mini player below. Green means it's streaming to your PC.</p></div>
+</section>
+<section>
+  <div class="dev d2" data-design="tape" data-start="3"></div>
+  <div class="cap"><div class="n">02</div><h2>Tape deck</h2><p>The tape winding across the reels is the progress bar. Side A is Spotify, side B is the SD card.</p></div>
+</section>
+<section>
+  <div class="dev d3" data-design="vinyl" data-start="5"></div>
+  <div class="cap"><div class="n">03</div><h2>Turntable</h2><p>The tonearm is the progress bar, so tap the record to drop the needle. Pull a sleeve out of the crate to play it.</p></div>
+</section>
+<section>
+  <div class="dev d4" data-design="runway" data-start="6"></div>
+  <div class="cap"><div class="n">04</div><h2>Running order</h2><p>Every track is a look and the song is the walk. Mine, obviously.</p></div>
+</section>
+<footer>Screens at native 400×240 and 320×240, drawn at up to 2×. Everything's tappable, and only one deck plays at a time.</footer>
+
+<template id="shell">
+  <div class="shell">
+    <div class="lid"><i class="spk l"></i><i class="spk r"></i><div class="scr top"></div></div>
+    <div class="hinge"></div>
+    <div class="base"><i class="cpad"></i><i class="dpad"></i><span class="abxy"><i></i><i></i><i></i><i></i></span><div class="scr bot"></div><span class="ssb"><i></i><i></i><i></i></span></div>
+  </div>
+</template>
+
+<script>
+const LIB = [
+  {t:"Single Ladies",        a:"Beyoncé",            d:193, src:"sp", f:"24-bit / 44.1 kHz", c:"#7a0f1c", c2:"#f0d9b5"},
+  {t:"Harpsichord at Two",   a:"Salon Nocturne",     d:241, src:"sd", f:"FLAC 16/44.1",      c:"#2e3b30", c2:"#d8c48f"},
+  {t:"Bad Coat Weather",     a:"The Doormen",        d:178, src:"sp", f:"24-bit / 44.1 kHz", c:"#1f2a44", c2:"#d7b46a"},
+  {t:"Manhattan After Dark", a:"Nuit Rouge",         d:305, src:"sd", f:"FLAC 24/96",        c:"#1a1212", c2:"#c0182f"},
+  {t:"Retail Therapy",       a:"New Money",          d:204, src:"sp", f:"24-bit / 44.1 kHz", c:"#c9a227", c2:"#2a1d14"},
+  {t:"Viscount",             a:"Lady Geist",         d:262, src:"sd", f:"MP3 320",           c:"#4b2a55", c2:"#e8d7ef"},
+  {t:"Fashion Week",         a:"Haze & Calico",      d:221, src:"sp", f:"24-bit / 44.1 kHz", c:"#e4ddd0", c2:"#1c1515"},
+  {t:"Midtown Static",       a:"Blackmore Alumni",   d:187, src:"sd", f:"OPUS 160",          c:"#33525e", c2:"#f0b48a"},
+];
+const OUT = "32.7 kHz";   // what the 3DS DSP actually plays at
+const PC = "ALEX-PC";
+
+const I = {
+  play:'<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9-5.5z" fill="currentColor"/></svg>',
+  pause:'<svg viewBox="0 0 16 16"><path d="M4 2.5h3v11H4zM9 2.5h3v11H9z" fill="currentColor"/></svg>',
+  next:'<svg viewBox="0 0 16 16"><path d="M2.5 2.5v11l7-5.5zM11 2.5h2.5v11H11z" fill="currentColor"/></svg>',
+  prev:'<svg viewBox="0 0 16 16"><path d="M13.5 2.5v11l-7-5.5zM2.5 2.5H5v11H2.5z" fill="currentColor"/></svg>',
+  ff:'<svg viewBox="0 0 16 16"><path d="M1 3v10l7-5zM8 3v10l7-5z" fill="currentColor"/></svg>',
+  rew:'<svg viewBox="0 0 16 16"><path d="M15 3v10l-7-5zM8 3v10L1 8z" fill="currentColor"/></svg>',
+  pc:'<svg viewBox="0 0 16 16"><rect x="1.5" y="2.5" width="13" height="8.5" rx="1" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 14h6M8 11v3" stroke="currentColor" stroke-width="1.6"/></svg>',
+  sd:'<svg viewBox="0 0 16 16"><path d="M4 1.5h6.5l2.5 2.5v10.5H4z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 3.5v2.5M8.5 3.5v2.5M10.5 4.5v1.5" stroke="currentColor" stroke-width="1.3"/></svg>',
+  home:'<svg viewBox="0 0 16 16"><path d="M2 7.5L8 2l6 5.5V14H10V10H6v4H2z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+  search:'<svg viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.6"/></svg>',
+  lib:'<svg viewBox="0 0 16 16"><path d="M2.5 2v12M6 2v12M9.5 2.5l4 11.2" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>',
+};
+const fmt = s => { s = Math.max(0, Math.floor(s)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); };
+const nn = i => String(i+1).padStart(2,"0");
+const sym = t => t.src === "sp" ? "◆" : "■";
+const art = i => { const {c:a, c2:b} = LIB[i]; return [
+  `background:radial-gradient(circle at 68% 34%,${b} 0 24%,transparent 25%),${a}`,
+  `background:linear-gradient(135deg,${a} 0 55%,${b} 55% 61%,${a} 61%)`,
+  `background:repeating-linear-gradient(0deg,${a} 0 14%,${b} 14% 18%)`,
+  `background:conic-gradient(from 45deg,${a} 0 25%,${b} 0 50%,${a} 0 75%,${b} 0)`][i % 4]; };
+const where = t => t.src === "sp" ? `Spotify · on ${PC}` : `SD card · ${t.f}`;
+
+const D = {};
+
+/* 1 · Spotify */
+D.spotify = {
+  render(top, bot, st) {
+    const t = LIB[st.i], f = st.filter;
+    top.innerHTML = `<div class="s1t" style="--c:${t.c}">
+      <div class="s1h">PLAYING FROM <b>${f === "sd" ? "SD CARD" : f === "sp" ? "SPOTIFY" : "YOUR LIBRARY"}</b></div>
+      <div class="s1art" style="${art(st.i)}"></div>
+      <div class="s1m">
+        <div class="s1ti">${t.t}</div><div class="s1ar">${t.a}</div>
+        <div class="s1q"><span class="s1bd ${t.src}">${t.src === "sp" ? "LOSSLESS" : "LOCAL"}</span>${t.f}</div>
+        <div class="s1d ${t.src}">${t.src === "sp" ? I.pc + "Playing on " + PC : I.sd + "Playing on this 3DS"}</div>
+      </div>
+      <div class="s1p" data-act="seek" tabindex="0" role="slider" aria-label="Seek"><div class="s1bar"><i class="fill"></i><i class="knob"></i></div></div>
+      <div class="s1tt"><span class="el"></span><span>${fmt(t.d)}</span></div></div>`;
+    const rows = LIB.map((x, i) => ({x, i})).filter(o => f === "all" || o.x.src === f);
+    bot.innerHTML = `<div class="s1b" style="--c:${t.c}">
+      <div class="s1chips">${[["all","All"],["sp","Spotify"],["sd","On SD"]].map(([k,l]) => `<button data-act="filter" data-k="${k}" class="${f===k?"on":""}">${l}</button>`).join("")}</div>
+      <div class="scroll s1list">${rows.map(({x, i}) => `<button class="s1row ${i===st.i?"cur":""}" data-act="play" data-i="${i}"><span class="a" style="${art(i)}"></span><span class="tx"><b>${x.t}</b><small>${x.src==="sd"?I.sd:""}${x.a}</small></span><span class="du">${fmt(x.d)}</span></button>`).join("")}</div>
+      <div class="s1mini"><span class="a" style="${art(st.i)}"></span><span class="tx"><b>${t.t}</b><small class="${t.src}">${t.src==="sp"?I.pc+PC:I.sd+"This 3DS"}</small></span>
+        <button data-act="prev" aria-label="Previous">${I.prev}</button><button data-act="toggle" class="pp" aria-label="${st.playing?"Pause":"Play"}">${st.playing?I.pause:I.play}</button><button data-act="next" aria-label="Next">${I.next}</button><span class="mbar"><i></i></span></div>
+      <nav class="s1nav"><span>${I.home}Home</span><span>${I.search}Search</span><span class="on">${I.lib}Your Library</span></nav></div>`;
+  },
+};
+
+/* 2 · tape deck */
+const R_MAX = 34, R_MIN = 12;
+D.tape = {
+  render(top, bot, st) {
+    const t = LIB[st.i], side = t.src === "sp" ? "A" : "B";
+    const teeth = [0,1,2,3,4,5].map(k => `<rect x="-1.5" y="-9" width="3" height="4" fill="#2a221d" transform="rotate(${k*60})"/>`).join("");
+    const hub = cls => `<g class="${cls}"><circle r="11" fill="#f1ebe0"/><circle r="5" fill="#2a221d"/>${teeth}</g>`;
+    top.innerHTML = `<svg viewBox="0 0 400 240" class="c2svg">
+      <defs><clipPath id="c2win"><rect x="70" y="102" width="160" height="46" rx="6"/></clipPath></defs>
+      <rect width="400" height="240" fill="#2b2622"/>
+      <rect x="42" y="7" width="316" height="196" rx="11" fill="#171310"/>
+      <g transform="translate(50 13)">
+        <rect width="300" height="184" rx="9" fill="#e7ddcc" stroke="#b9ab93" stroke-width="2"/>
+        ${[[10,10],[290,10],[10,174],[290,174]].map(([x,y]) => `<circle cx="${x}" cy="${y}" r="3.5" fill="#cfc3ad" stroke="#a8997f"/><path d="M${x-2} ${y}h4" stroke="#8a7d6b"/>`).join("")}
+        <rect x="14" y="10" width="272" height="86" rx="4" fill="#fbf7ee"/>
+        <rect x="14" y="10" width="272" height="17" fill="${t.src === "sp" ? "#2f4a7a" : "#8a0f1f"}"/>
+        <text x="22" y="22" font-family="Inter" font-weight="700" font-size="8" letter-spacing="1.4" fill="#fbf7ee">${t.src === "sp" ? "STREAM · " + PC : "SD CARD · ON THIS 3DS"}</text>
+        <text x="278" y="22" text-anchor="end" font-family="Inter" font-weight="700" font-size="8" letter-spacing="1" fill="#fbf7ee">${t.f.toUpperCase()}</text>
+        <rect x="22" y="36" width="24" height="24" fill="none" stroke="#1c1515" stroke-width="1.5"/>
+        <text x="34" y="55" text-anchor="middle" font-family="Oswald" font-weight="600" font-size="18" fill="#1c1515">${side}</text>
+        <path d="M56 61H278M56 85H278" stroke="#d6cdbd"/>
+        <text x="58" y="57" class="hand" font-weight="700" font-size="23">${t.t}</text>
+        <text x="58" y="81" class="hand" font-weight="500" font-size="16">${t.a}</text>
+        <rect x="70" y="102" width="160" height="46" rx="6" fill="#241c18"/>
+        <g clip-path="url(#c2win)">
+          <circle class="rl" cx="105" cy="125" r="30" fill="#4a2e1c" stroke="#6b442b"/>
+          <circle class="rr" cx="195" cy="125" r="20" fill="#4a2e1c" stroke="#6b442b"/>
+        </g>
+        <g transform="translate(105 125)">${hub("hl")}</g>
+        <g transform="translate(195 125)">${hub("hr")}</g>
+        <rect x="70" y="102" width="160" height="46" rx="6" fill="none" stroke="#b9ab93" stroke-width="2"/>
+        <path d="M58 184L74 155H226L242 184Z" fill="#ddd2bf" stroke="#b9ab93" stroke-width="1.5"/>
+        <circle cx="100" cy="171" r="4" fill="#2a221d"/><circle cx="200" cy="171" r="4" fill="#2a221d"/>
+        <rect x="127" y="166" width="7" height="7" fill="#2a221d"/><rect x="166" y="166" width="7" height="7" fill="#2a221d"/>
+      </g>
+      <rect x="44" y="211" width="56" height="22" rx="2" fill="#0d0b0a"/>
+      <text class="cnt" x="72" y="227" text-anchor="middle" font-family="ui-monospace,Consolas,monospace" font-size="15" fill="#f2ece0">000</text>
+      <text x="108" y="225" font-family="Inter" font-weight="700" font-size="7" letter-spacing="1.6" fill="#a89c8c">COUNTER</text>
+      <circle cx="196" cy="222" r="4" fill="${st.playing ? "#ff4a2a" : "#4a3d35"}"/>
+      <text x="205" y="225" font-family="Inter" font-weight="700" font-size="7" letter-spacing="1.6" fill="#a89c8c">PLAY</text>
+      <text class="rm" x="356" y="227" text-anchor="end" font-family="ui-monospace,Consolas,monospace" font-size="14" fill="#f2ece0"></text>
+    </svg>`;
+    const row = i => `<button class="c2row ${i===st.i?"cur":""}" data-act="play" data-i="${i}"><span class="no">${LIB[i].src==="sp"?"A":"B"}${LIB.filter((x,k)=>k<=i&&x.src===LIB[i].src).length}</span><span class="tt">${LIB[i].t} · ${LIB[i].a}</span><span class="du">${fmt(LIB[i].d)}</span></button>`;
+    const idx = s => LIB.map((x,i) => x.src === s ? i : -1).filter(i => i >= 0);
+    const paused = !st.playing && st.pos > 0;
+    bot.innerHTML = `<div class="c2b">
+      <div class="scroll c2j"><div class="c2side">SIDE A · SPOTIFY</div>${idx("sp").map(row).join("")}<div class="c2side">SIDE B · SD CARD</div>${idx("sd").map(row).join("")}</div>
+      <div class="c2keys">
+        <button class="k" data-act="prev" aria-label="Rewind">${I.rew}REW</button>
+        <button class="k ${st.playing?"down":""}" data-act="play-key" aria-label="Play"><i class="led"></i>${I.play}PLAY</button>
+        <button class="k ${paused?"down":""}" data-act="pause-key" aria-label="Pause">${I.pause}PAUSE</button>
+        <button class="k" data-act="next" aria-label="Fast forward">${I.ff}FF</button>
+      </div></div>`;
+  },
+  tick(top, bot, st, f) {
+    const span = R_MAX*R_MAX - R_MIN*R_MIN;
+    st.rL = Math.sqrt(R_MAX*R_MAX - f*span); st.rR = Math.sqrt(R_MIN*R_MIN + f*span);
+    top.querySelector(".rl").setAttribute("r", st.rL);
+    top.querySelector(".rr").setAttribute("r", st.rR);
+    top.querySelector(".cnt").textContent = String(Math.floor(st.pos) % 1000).padStart(3, "0");
+    top.querySelector(".hl").setAttribute("transform", `rotate(${st.aL})`);
+    top.querySelector(".hr").setAttribute("transform", `rotate(${st.aR})`);
+  },
+  frame(top, bot, st, dt) {        // tape moves at one speed, so the thinner reel spins faster
+    st.aL = (st.aL + dt*640/st.rL) % 360;
+    st.aR = (st.aR + dt*640/st.rR) % 360;
+    top.querySelector(".hl").setAttribute("transform", `rotate(${st.aL})`);
+    top.querySelector(".hr").setAttribute("transform", `rotate(${st.aR})`);
+  },
+};
+
+/* 3 · turntable */
+const PIV = [300, 40], ARM = 180, CEN = [130, 124], GROOVE = [100, 42];
+function armAngle(f) {             // angle that puts the stylus on the groove for progress f
+  const r = GROOVE[0] - f*(GROOVE[0] - GROOVE[1]);
+  let lo = 0, hi = 63.5;
+  for (let k = 0; k < 24; k++) {
+    const m = (lo + hi)/2, a = m*Math.PI/180;
+    const d = Math.hypot(PIV[0] - ARM*Math.sin(a) - CEN[0], PIV[1] + ARM*Math.cos(a) - CEN[1]);
+    d > r ? lo = m : hi = m;
+  }
+  return (lo + hi)/2;
+}
+D.vinyl = {
+  render(top, bot, st) {
+    const t = LIB[st.i];
+    let grooves = "";
+    for (let r = 100; r >= 40; r -= 3) grooves += `<circle r="${r}" fill="none" stroke="#fff" stroke-opacity="${r % 15 === 10 ? .1 : .045}"/>`;
+    const lamp = on => on ? "#ff5a3c" : "#3a2a20";
+    top.innerHTML = `<svg viewBox="0 0 400 240" class="t3svg">
+      <defs><pattern id="t3g" width="400" height="7" patternUnits="userSpaceOnUse"><path d="M0 3.5C80 2 160 5 240 3.5S360 2 400 3.5" fill="none" stroke="#2a170c" stroke-opacity=".4"/></pattern></defs>
+      <rect width="400" height="240" fill="#6a4429"/><rect width="400" height="240" fill="url(#t3g)"/>
+      <g transform="translate(${CEN[0]} ${CEN[1]})">
+        <circle r="112" fill="#8d9196"/><circle r="109" fill="none" stroke="#55595e" stroke-width="3" stroke-dasharray="2 2.6"/>
+        <g class="rec" data-act="needle">
+          <circle r="104" fill="#121010"/>${grooves}
+          <circle r="34" fill="${t.c}"/><circle r="31" fill="none" stroke="${t.c2}" stroke-width="1" stroke-dasharray="1 3"/>
+          <text y="-10" text-anchor="middle" class="t3lbl" fill="${t.c2}">${t.a.toUpperCase()}</text>
+          <text y="17" text-anchor="middle" class="t3lbl" fill="${t.c2}">${sym(t)} ${fmt(t.d)}</text>
+          <circle r="3.5" fill="#d9dcdf"/>
+        </g>
+        <path d="M0 0L-64 -82A104 104 0 0 1 -22 -101.6Z" fill="#fff" opacity=".05" pointer-events="none"/>
+        <path d="M0 0L64 82A104 104 0 0 1 22 101.6Z" fill="#fff" opacity=".03" pointer-events="none"/>
+      </g>
+      <g class="arm" style="transform-origin:${PIV[0]}px ${PIV[1]}px;transform:rotate(${st.pos === 0 && !st.playing ? 0 : armAngle(st.pos/t.d)}deg)">
+        <rect x="296" y="12" width="8" height="22" rx="2" fill="#7d8186"/>
+        <rect x="297.5" y="40" width="5" height="166" rx="2.5" fill="#cfd2d6"/>
+        <path d="M292 204h16l1.5 17h-19z" fill="#232326"/>
+      </g>
+      <circle cx="${PIV[0]}" cy="${PIV[1]}" r="13" fill="#b9bdc2"/><circle cx="${PIV[0]}" cy="${PIV[1]}" r="5" fill="#55595e"/>
+      <g class="t3plate" transform="translate(322 146)">
+        <rect width="70" height="80" rx="3" fill="#1d1410" stroke="#a88a5f"/>
+        <circle cx="12" cy="16" r="4" fill="${lamp(t.src==="sp")}"/><text x="21" y="19">STREAM</text>
+        <circle cx="12" cy="33" r="4" fill="${lamp(t.src==="sd")}"/><text x="21" y="36">SD</text>
+        <text x="8" y="56" letter-spacing=".5">${t.src==="sp" ? "24 / 44.1" : t.f}</text>
+        <text x="8" y="68" letter-spacing=".5" fill-opacity=".7">${t.src==="sp" ? "ON " + PC : "OUT 32.7k"}</text>
+      </g>
+    </svg>`;
+    bot.innerHTML = `<div class="t3b">
+      <div class="t3sl"><span class="a" style="${art(st.i)}"></span><span class="tx"><b>${t.t}</b><small>${t.a}</small><em>${sym(t)} ${where(t)}</em></span></div>
+      <div class="scroll t3cr">${LIB.map((x,i) => `<button class="t3sp ${i===st.i?"cur":""}" data-act="play" data-i="${i}" style="background:${x.c};color:${x.c2}"><span>${sym(x)}</span>${x.t} · ${x.a}<span class="du">${fmt(x.d)}</span></button>`).join("")}</div>
+      <div class="t3ctl"><button data-act="prev" aria-label="Previous">${I.prev}</button><button class="ss ${st.playing?"on":""}" data-act="toggle" aria-label="${st.playing?"Stop":"Start"}"><i></i>START · STOP</button><button data-act="next" aria-label="Next">${I.next}</button></div></div>`;
+  },
+  tick(top, bot, st, f) {
+    const resting = st.pos === 0 && !st.playing;
+    top.querySelector(".arm").style.transform = `rotate(${resting ? 0 : armAngle(f)}deg)`;
+    top.querySelector(".rec").setAttribute("transform", `rotate(${st.ang})`);
+  },
+  frame(top, bot, st, dt) {
+    st.ang = (st.ang + dt*200) % 360;          // 33⅓ rpm
+    top.querySelector(".rec").setAttribute("transform", `rotate(${st.ang})`);
+  },
+};
+
+/* 4 · running order */
+D.runway = {
+  render(top, bot, st) {
+    const t = LIB[st.i];
+    let ticks = "";
+    for (let s = 30; s < t.d; s += 30) ticks += `<i class="tk ${s % 60 ? "" : "mj"}" style="left:${s/t.d*100}%"></i>`;
+    top.innerHTML = `<div class="m4t"><div class="m4in">
+      <div class="m4look"><span>LOOK</span><b>${nn(st.i)}</b><small>OF ${nn(LIB.length-1)}</small></div>
+      <div class="m4m"><div class="m4ti">${t.t}</div><div class="m4ar">${t.a}</div>
+        <div class="m4src"><i>${sym(t)}</i><span>${t.src==="sp" ? `Spotify · plays on ${PC} · ${t.f}` : `SD card · ${t.f} → ${OUT} out`}</span></div></div>
+      <div class="m4run"><span class="lab">RUNWAY</span>
+        <div class="m4trk" data-act="seek" tabindex="0" role="slider" aria-label="Seek"><i class="line"></i><i class="done"></i>${ticks}<i class="walk"></i></div>
+        <div class="m4tt"><span class="el"></span><span class="rm"></span></div></div>
+    </div></div>`;
+    bot.innerHTML = `<div class="m4b"><div class="m4in">
+      <div class="m4h"><span>RUNNING ORDER</span><span>${nn(st.i)} / ${nn(LIB.length-1)}</span></div>
+      <div class="scroll m4list">${LIB.map((x,i) => `<button class="m4row ${i===st.i?"cur":i<st.i?"past":""}" data-act="play" data-i="${i}"><span class="no">${nn(i)}</span><span class="tx"><b>${x.t}</b><small>${x.a}</small></span><span class="sy">${sym(x)}</span><span class="du">${fmt(x.d)}</span></button>`).join("")}</div>
+      <div class="m4ctl"><button data-act="prev" aria-label="Previous">${I.prev}</button><button class="main" data-act="toggle">${st.playing ? I.pause + "HOLD" : I.play + "WALK"}</button><button data-act="next" aria-label="Next">${I.next}</button></div>
+    </div></div>`;
+  },
+};
+
+/* engine: one shared library, one deck playing at a time */
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const players = [];
+function setPlaying(p, on) {
+  if (on) players.forEach(q => { if (q !== p && q.st.playing) { q.st.playing = false; q.render(); } });
+  p.st.playing = on;
+}
+function reveal(bot) {
+  const box = bot.querySelector(".scroll"), cur = box && box.querySelector(".cur");
+  if (!cur) return;
+  if (cur.offsetTop < box.scrollTop) box.scrollTop = cur.offsetTop - 22;
+  else if (cur.offsetTop + cur.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTop = cur.offsetTop + cur.offsetHeight - box.clientHeight;
+}
+function mount(el) {
+  el.appendChild(document.getElementById("shell").content.cloneNode(true));
+  const design = D[el.dataset.design], start = +el.dataset.start;
+  const st = {i:start, playing:false, pos:Math.round(LIB[start].d*.35), filter:"all", ang:0, aL:0, aR:120};
+  const top = el.querySelector(".top"), bot = el.querySelector(".bot");
+  const p = {st, design, top, bot};
+  const go = i => { st.i = (i + LIB.length) % LIB.length; st.pos = 0; render(); };
+  function render() {
+    const keep = [...bot.querySelectorAll(".scroll")].map(e => e.scrollTop);
+    design.render(top, bot, st);
+    bot.querySelectorAll(".scroll").forEach((e, k) => e.scrollTop = keep[k] || 0);
+    reveal(bot); tick();
+  }
+  function tick() {
+    const t = LIB[st.i], f = Math.min(1, st.pos/t.d);
+    top.style.setProperty("--f", f); bot.style.setProperty("--f", f);
+    el.querySelectorAll(".el").forEach(e => e.textContent = fmt(st.pos));
+    el.querySelectorAll(".rm").forEach(e => e.textContent = "-" + fmt(t.d - st.pos));
+    design.tick && design.tick(top, bot, st, f);
+  }
+  const seek = f => { st.pos = Math.max(0, Math.min(.995, f))*LIB[st.i].d; tick(); };
+  const api = {
+    play: i => { if (i === st.i) return api.toggle(); st.i = i; st.pos = 0; setPlaying(p, true); render(); },
+    toggle: () => { setPlaying(p, !st.playing); render(); },
+    "play-key": () => { if (!st.playing) api.toggle(); },
+    "pause-key": () => { if (st.playing) api.toggle(); },
+    next: () => go(st.i + 1),
+    prev: () => st.pos > 3 ? (st.pos = 0, tick()) : go(st.i - 1),
+    filter: k => { st.filter = k; render(); },
+  };
+  el.addEventListener("click", e => {
+    const a = e.target.closest("[data-act]"); if (!a) return;
+    const act = a.dataset.act;
+    if (act === "seek") { const r = a.getBoundingClientRect(); seek((e.clientX - r.left)/r.width); }
+    else if (act === "needle") {
+      const svg = a.ownerSVGElement, pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(svg.getScreenCTM().inverse());
+      seek((GROOVE[0] - Math.hypot(pt.x - CEN[0], pt.y - CEN[1]))/(GROOVE[0] - GROOVE[1]));
+    }
+    else if (act === "play") api.play(+a.dataset.i);
+    else if (act === "filter") api.filter(a.dataset.k);
+    else api[act]();
+  });
+  el.addEventListener("keydown", e => {
+    if (!e.target.closest('[data-act="seek"]') || !/Arrow(Left|Right)/.test(e.key)) return;
+    e.preventDefault(); seek((st.pos + (e.key === "ArrowRight" ? 5 : -5))/LIB[st.i].d);
+  });
+  Object.assign(p, {render, tick, api});
+  players.push(p); render();
+}
+function fit() {
+  const s = Math.max(1, Math.min(2, (innerWidth - 112 - 56 - 260)/480));
+  document.documentElement.style.setProperty("--s", s);
+}
+fit(); addEventListener("resize", fit);
+document.querySelectorAll(".dev").forEach(mount);
+document.fonts && document.fonts.ready.then(() => players.forEach(p => p.render()));
+
+if (location.hash === "#selftest") setTimeout(() => {
+  const [p1, p2, p3, p4] = players, out = [];
+  p3.bot.querySelector('.t3sp[data-i="2"]').click();
+  out.push(`vinyl plays 2: ${p3.st.playing && p3.st.i === 2}`);
+  p4.bot.querySelector('.m4ctl .main').click();
+  out.push(`runway took over: ${p4.st.playing && !p3.st.playing}`);
+  p2.bot.querySelector('[data-act="play-key"]').click();
+  out.push(`tape took over: ${p2.st.playing && !p4.st.playing}`);
+  p1.bot.querySelector('[data-k="sd"]').click();
+  out.push(`spotify filter sd rows: ${p1.bot.querySelectorAll(".s1row").length}`);
+  p1.st.pos = 0; p1.api.prev();
+  out.push(`spotify prev wraps to ${p1.st.i}`);
+  document.title = "SELFTEST " + out.join(" | ");
+}, 300);
+
+let last = performance.now();
+requestAnimationFrame(function loop(now) {
+  const dt = Math.min(.1, (now - last)/1000); last = now;
+  for (const p of players) {
+    if (!p.st.playing) continue;
+    p.st.pos += dt;
+    if (p.st.pos >= LIB[p.st.i].d) p.api.next();
+    else { p.tick(); if (!reduce && p.design.frame) p.design.frame(p.top, p.bot, p.st, dt); }
+  }
+  requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
