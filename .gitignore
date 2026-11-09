@@ -1,0 +1,44 @@
+# backups made before edits
+*.pre*
+*.pre-*
+*.build[0-9]*
+*.v1
+README.before-*
+Makefile.build*
+
+# build output
+*.o
+*.elf
+*.3dsx
+*.cia
+*.smdh
+player/builds/
+builds/
+player/test/out/
+
+# logins and per-person settings
+player/spotify-client-id.txt
+.token*
+*.token
+*.log
+
+# downloaded tools (makerom, bannertool, pycgfx, ...)
+tools/cia/dl/
+
+# local stuff
+backups/
+__pycache__/
+.pytest_cache/
+.agent-memory/
+
+# early experiments and notes (kept on the PC)
+connect/
+nettest/
+tonetest/
+flactest/
+HANDOFF-spotify-on-3ds.md
+extensions-plan.md
+local-plan.md
+research-lossless.md
+spotify-plan.md
+player/test/stream/t
