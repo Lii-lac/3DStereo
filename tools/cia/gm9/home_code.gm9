@@ -1,0 +1,16 @@
+# Copies the HOME Menu's code out of SysNAND to the SD card, so the launch-logo signing key can be
+# found on the PC (every launch logo carries an HMAC-SHA256 that HOME checks; ours has none that
+# matches). Reads the NAND only; writes one file to the SD: 0:/gm9/out/home_code.bin
+set ERRORMSG "HOME Menu copy failed"
+set SUCCESSMSG "Done. home_code.bin is in 0:/gm9/out. Power off and put the card back in the PC."
+if ask "Copy the HOME Menu code to the SD card?\n(reads the NAND, changes nothing on it)"
+    if find 1:/title/00040030/00008f02/content/*.app HOMEAPP
+        extrcode $[HOMEAPP] $[GM9OUT]/home_code.bin
+    elif find 1:/title/00040030/00009802/content/*.app HOMEAPP
+        extrcode $[HOMEAPP] $[GM9OUT]/home_code.bin
+    elif find 1:/title/00040030/00008202/content/*.app HOMEAPP
+        extrcode $[HOMEAPP] $[GM9OUT]/home_code.bin
+    else
+        echo "No HOME Menu found under 1:/title/00040030.\nTell Mina what region the 3DS is."
+    end
+end
