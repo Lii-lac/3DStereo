@@ -12,8 +12,8 @@ OBJS      := source/main.o source/audio.o source/library.o source/tags.o source/
              source/spotify.o source/spotmatch.o source/cacert.o source/net.o source/meta.o \
              source/connect.o source/cpb.o source/stream.o source/splash.o source/update.o
 
-VERSION    ?= 1.0.2
-BUILD      ?= 107
+VERSION    ?= 1.0.3
+BUILD      ?= 108
 CFLAGS     += -DBUILD=$(BUILD) -DVERSION='"$(VERSION)"' -DCC_RELAUNCH
 VPARTS     := $(subst ., ,$(VERSION))   # the CIA's own version is VERSION's: major and minor up to 63, micro up to 15
 BANNERTOOL ?= bannertool
