@@ -185,27 +185,27 @@ static bool upd_row(float W, float y, u64 now) {
 		seen = st;
 		since = now;
 	}
-	float age = (float)(now - since), x0 = 6, top = y + 1, w = W - 12, h = ROW - 2;
+	float age = (float)(now - since), x0 = 0, top = y, w = W, h = ROW;   // the whole row, edge to edge like the cursor bar
 	switch (st) {
 	case U_CHECK:
-		upd_sheen(x0 - 70 + (now % 1100) / 1100.0f * (w + 70), 70, x0 + 2, x0 + w - 2, top, h, 40);
+		upd_sheen(x0 - 70 + (now % 1100) / 1100.0f * (w + 70), 70, x0, x0 + w, top, h, 40);
 		return false;
 	case U_GET:
-		if (pc < 0) { upd_sheen(x0 - 70 + (now % 1100) / 1100.0f * (w + 70), 70, x0 + 2, x0 + w - 2, top, h, 40); return false; }
+		if (pc < 0) { upd_sheen(x0 - 70 + (now % 1100) / 1100.0f * (w + 70), 70, x0, x0 + w, top, h, 40); return false; }
 		fill += (pc / 100.0f - fill) * 0.15f;
-		rrect(x0, top, fmaxf(fill * w, 12), h, 6, rgba(GREEN, 36));
+		rect(x0, top, fill * w, h, rgba(GREEN, 36));
 		upd_bars(W, y, now, 1, false, 220);
 		return false;
 	case U_FINISH:
 		fill = 1;
-		rrect(x0, top, w, h, 6, rgba(GREEN, (u8)(38 + 18 * sinf(now / 260.0f))));
+		rect(x0, top, w, h, rgba(GREEN, (u8)(38 + 18 * sinf(now / 260.0f))));
 		upd_bars(W, y, now, 1, true, 220);
 		return false;
 	case U_DONE: {
 		fill = 1;
 		float e = clamp01(age / 600), a = 18 + 28 * (1 - e) * (1 - e);
 		if (upd_bye) a += (82 - a) * clamp01((now - upd_bye) / 500.0f);   // the goodbye: the row lights up as it goes
-		rrect(x0, top, w, h, 6, rgba(GREEN, (u8)a));
+		rect(x0, top, w, h, rgba(GREEN, (u8)a));
 		float p = clamp01(age / 300);
 		ic_check(W - 20, y + 17, 9 * (p + 0.35f * sinf(p * (float)M_PI)));
 		return false;
@@ -213,7 +213,7 @@ static bool upd_row(float W, float y, u64 now) {
 	case U_FAIL: {
 		float p = clamp01(age / 700), e = 1 - (1 - p) * (1 - p) * (1 - p);
 		fill = from * (1 - e);
-		if (fill * w >= 12) rrect(x0, top, fill * w, h, 6, rgba(mixc(0x555555, GREEN, p), 36));
+		if (fill * w >= 1) rect(x0, top, fill * w, h, rgba(mixc(0x555555, GREEN, p), 36));
 		if (p < 1 && from > 0) upd_bars(W, y, now, 1 - p, false, (u8)(220 * (1 - p)));
 		return age > 600;
 	}
@@ -227,7 +227,7 @@ static void draw_set_row(int k, float y) {
 	bool chev = false, busy = false;
 	u64 now = osGetTime();
 	if (rescan_set < 0) { struct stat st; rescan_set = !stat(RESCAN, &st); }
-	if (k < 8 && set_flash[k] && now - set_flash[k] < 400) rrect(6, y + 1, W - 12, ROW - 2, 6, rgba(0xffffff, (u8)(45 * (400 - (now - set_flash[k])) / 400)));
+	if (k < 8 && set_flash[k] && now - set_flash[k] < 400) rect(0, y, W, ROW, rgba(0xffffff, (u8)(45 * (400 - (now - set_flash[k])) / 400)));
 	switch (k) {
 	case 0: snprintf(t, sizeof t, "Sound quality: %s", QLABEL[quality]); snprintf(s, sizeof s, "%s", QSUB[quality]); break;
 	case 1: snprintf(t, sizeof t, "Normalize volume"); snprintf(s, sizeof s, "%s", RGSUB[rg_cfg]); break;   // ReplayGain: the files' own loudness tags
