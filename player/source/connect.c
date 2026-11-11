@@ -18,6 +18,9 @@
 #include <sys/stat.h>
 #include <zlib.h>
 
+#ifndef VERSION
+#define VERSION "dev"
+#endif
 #ifndef BUILD
 #define BUILD 0
 #endif
@@ -850,7 +853,7 @@ static long put_state(int reason) {
 	rep_pos = p;
 	rep_at = now;
 	char ver[32];
-	snprintf(ver, sizeof ver, "pocket %d", BUILD);
+	snprintf(ver, sizeof ver, "pocket %s", VERSION);
 	CState s = {.name = dev_name, .device_id = devid, .volume = volume, .client_id = "65b708073fc0480ea92a077233ca87bd", .version = ver,
 	            .active = active, .loaded = loaded && wn > 0, .paused = paused, .reason = reason, .now_ms = now,
 	            .pos_ms = p, .dur_ms = cur_dur, .started_at = started_at, .last_msg_id = last_id, .last_from = last_from,

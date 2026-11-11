@@ -172,6 +172,7 @@ AccessControlInfo:
   ServiceAccessControl:
    - APT:U
    - ac:u
+   - am:u
    - cdc:CHK
    - cfg:u
    - cfg:nor

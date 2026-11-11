@@ -75,10 +75,11 @@ static void draw_drawer(float W, float H) {
 	rect(0, 0, W, H, rgba(0, (u8)(150 * e)));   // the page behind, dimmed
 	rect(x0, 0, pw, H, rgb(0x181818));
 	rect(x0 + pw, 0, 1, H, rgba(0xffffff, 25));
-	text("3DStereo", x0 + 16, 34, 18, rgb(0xffffff), BOLD | NAMEF, 0);
-	char b[32];
-	snprintf(b, sizeof b, "Build %d", BUILD);
-	text(b, x0 + 16, 48, 8, rgb(GREY), 0, 0);
+	// the name as the README writes it, a green 3; both halves in one font, whichever has the whole name
+	u32 nf = BOLD | (nf_has("3DStereo") ? NAMEF : 0);
+	float nx = x0 + 16;
+	nx += text("3", nx, 38, 18, rgb(GREEN), nf, 0);
+	text("DStereo", nx, 38, 18, rgb(0xffffff), nf, 0);
 	int at = drawer_page();
 	for (int k = 0; k < NDRAW; k++) {
 		float y = 62 + k * 38;
@@ -148,6 +149,78 @@ static void draw_once(float x, float y, bool on, u64 pressed) {
 	rect(cx - 0.75f, cy - 4.5f * k, 1.5f, 9 * k, c);
 }
 
+// a band of light across [lo, hi]: clear at its two ends, alpha a in the middle
+static void upd_sheen(float bx, float bw, float lo, float hi, float top, float h, float a) {
+	float xs[3] = {bx, bx + bw / 2, bx + bw}, as[3] = {0, a, 0};
+	for (int i = 0; i < 2; i++) {
+		float l = fmaxf(xs[i], lo), r = fminf(xs[i + 1], hi);
+		if (r <= l) continue;
+		float al = as[i] + (as[i + 1] - as[i]) * (l - xs[i]) / (xs[i + 1] - xs[i]);
+		float ar = as[i] + (as[i + 1] - as[i]) * (r - xs[i]) / (xs[i + 1] - xs[i]);
+		u32 cl = rgba(GREEN, (u8)al), cr = rgba(GREEN, (u8)ar);
+		C2D_DrawRectangle(l, top, 0, r - l, h, cl, cr, cl, cr);
+	}
+}
+
+// four little level bars beside the row's end; lv 0..1 is how alive they are, slow for the install
+static void upd_bars(float W, float y, u64 now, float lv, bool slow, u8 a) {
+	static const float sp[4] = {1.0f, 1.37f, 0.83f, 1.19f}, ph[4] = {0, 1.7f, 3.1f, 4.4f};
+	for (int i = 0; i < 4; i++) {
+		float v = 0.5f + 0.5f * sinf(now / (slow ? 210.0f : 90.0f) * sp[i] + ph[i]);
+		float hh = 3 + (slow ? 4 : 9) * v * lv;
+		rect(W - 36 + i * 4.5f, y + 25 - hh, 3, hh, rgba(GREEN, a));
+	}
+}
+
+// Settings > Update, the row as a meter: a sheen while it looks, green filling as it downloads, a pulse while it
+// installs, a check when it's in, and on a failure the green drains back out. True: show the chevron.
+static bool upd_row(float W, float y, u64 now) {
+	static int seen = -1;
+	static u64 since;
+	static float fill, from;   // the green's width, 0..1, eased toward the percent; from: where a failure drains from
+	int pc, st = upd_state(&pc);
+	if (st != seen) {
+		if (st == U_CHECK) fill = 0;
+		if (st == U_FAIL) from = fill;
+		seen = st;
+		since = now;
+	}
+	float age = (float)(now - since), x0 = 6, top = y + 1, w = W - 12, h = ROW - 2;
+	switch (st) {
+	case U_CHECK:
+		upd_sheen(x0 - 70 + (now % 1100) / 1100.0f * (w + 70), 70, x0 + 2, x0 + w - 2, top, h, 40);
+		return false;
+	case U_GET:
+		if (pc < 0) { upd_sheen(x0 - 70 + (now % 1100) / 1100.0f * (w + 70), 70, x0 + 2, x0 + w - 2, top, h, 40); return false; }
+		fill += (pc / 100.0f - fill) * 0.15f;
+		rrect(x0, top, fmaxf(fill * w, 12), h, 6, rgba(GREEN, 36));
+		upd_bars(W, y, now, 1, false, 220);
+		return false;
+	case U_FINISH:
+		fill = 1;
+		rrect(x0, top, w, h, 6, rgba(GREEN, (u8)(38 + 18 * sinf(now / 260.0f))));
+		upd_bars(W, y, now, 1, true, 220);
+		return false;
+	case U_DONE: {
+		fill = 1;
+		float e = clamp01(age / 600), a = 18 + 28 * (1 - e) * (1 - e);
+		if (upd_bye) a += (82 - a) * clamp01((now - upd_bye) / 500.0f);   // the goodbye: the row lights up as it goes
+		rrect(x0, top, w, h, 6, rgba(GREEN, (u8)a));
+		float p = clamp01(age / 300);
+		ic_check(W - 20, y + 17, 9 * (p + 0.35f * sinf(p * (float)M_PI)));
+		return false;
+	}
+	case U_FAIL: {
+		float p = clamp01(age / 700), e = 1 - (1 - p) * (1 - p) * (1 - p);
+		fill = from * (1 - e);
+		if (fill * w >= 12) rrect(x0, top, fill * w, h, 6, rgba(mixc(0x555555, GREEN, p), 36));
+		if (p < 1 && from > 0) upd_bars(W, y, now, 1 - p, false, (u8)(220 * (1 - p)));
+		return age > 600;
+	}
+	default: return true;   // idle, or already the newest
+	}
+}
+
 static void draw_set_row(int k, float y) {
 	float W = LW;
 	char t[64], s[96];
@@ -182,7 +255,12 @@ static void draw_set_row(int k, float y) {
 		snprintf(s, sizeof s, "Covers, photos, lyrics");
 		chev = true;
 		break;
-	default: snprintf(t, sizeof t, "About"); snprintf(s, sizeof s, "Build %d \xc2\xb7 Lii-lac", BUILD); break;
+	case 7:
+		snprintf(t, sizeof t, "Update");
+		upd_line(s, sizeof s);
+		chev = upd_row(W, y, now);
+		break;
+	default: snprintf(t, sizeof t, "About"); snprintf(s, sizeof s, "v%s · Lii-lac", VERSION); break;
 	}
 	text(t, 16, y + 15, 11, rgb(0xffffff), 0, W - 50);
 	text(s, 16, y + 28, 9, busy ? rgba(GREEN, (u8)(150 + 105 * sinf(now / 180.0f))) : rgb(GREY), 0, W - 50);
@@ -205,7 +283,7 @@ static void draw_set_row(int k, float y) {
 static void le_trim(char *s);   // listedit.inc
 // A or a tap (dir 1), or left and right (-1, 1), on a row of the Settings page
 static void set_activate(int k, int dir) {
-	if (k == 2 || k == 3 || k == 5 || k == 6) set_flash[k] = osGetTime();
+	if (k == 2 || k == 3 || k == 5 || k == 6 || k == 7) set_flash[k] = osGetTime();
 	switch (k) {
 	case 0:
 		if (!g_audio_ok) { say("The sound didn't start"); break; }
@@ -248,6 +326,12 @@ static void set_activate(int k, int dir) {
 		if (dir < 0) break;
 		if (!g_audio_ok) { say("The sound didn't start"); break; }
 		cc_open();
+		break;
+	case 7:   // Update: one press checks GitHub and installs a newer release; once one's in, the next opens it
+		if (dir < 0) break;
+		if (upd_done()) { if (!upd_bye) { upd_mark(); upd_bye = osGetTime(); } }
+		else if (upd_busy()) say("Already updating");
+		else upd_start();
 		break;
 	case 3: {
 		struct stat st;

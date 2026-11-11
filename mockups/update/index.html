@@ -1,0 +1,186 @@
+<!doctype html><meta charset="utf-8"><title>3DStereo updating, four ways to move</title>
+<style>
+html{background:#171717}
+body{margin:0;padding:30px;color:#d8d2c4;font:14px/1.4 "Segoe UI",system-ui,sans-serif}
+.top{display:flex;gap:18px;align-items:center;margin:0 0 26px}
+button{font:inherit;color:#d8d2c4;background:#262626;border:0;border-radius:16px;padding:6px 18px;cursor:pointer}
+button:hover{background:#303030}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:46px 30px;justify-items:center}
+.cell{display:flex;flex-direction:column;align-items:center;gap:14px}
+.cell.wide{grid-column:1/-1}
+.cell b{font-weight:600;color:#1ed760;font-size:20px}
+.rig{display:flex;flex-direction:column;align-items:center;gap:26px}
+canvas{display:block;background:#121212;box-shadow:0 0 0 8px #0a0a0a,0 14px 34px #000a}
+</style>
+<div class="top"><button id="replay">again</button><span id="ph" style="color:#7d786c;font-variant-numeric:tabular-nums"></span></div>
+<div class="grid" id="grid"></div>
+<script>
+const G='#1ed760',CREAM='#f2e6cf',INK='#121212',TAPE='#4a2e1a',SPILL='#8a5a36',BG='#121212',WHITE='#fff',GREY='#b3b3b3';
+const FONT='"Segoe UI",system-ui,sans-serif', S=1.5, W=320, ROW=34, NEWV='1.1.0';
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const ease=t=>{t=clamp(t);return 1-Math.pow(1-t,3)};
+const easeIO=t=>{t=clamp(t);return t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2};
+const lerp=(a,b,t)=>a+(b-a)*t;
+function rr(c,x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function fillRR(c,x,y,w,h,r,col,a=1){if(w<=0)return;c.globalAlpha=a;c.fillStyle=col;rr(c,x,y,w,h,r);c.fill();c.globalAlpha=1}
+function txt(c,s,x,y,size,col,al='left',w='700',a=1,max){c.globalAlpha=a;c.fillStyle=col;c.font=w+' '+size+'px '+FONT;c.textAlign=al;max?c.fillText(s,x,y,max):c.fillText(s,x,y);c.globalAlpha=1}
+function arc(c,x,y,r,a0,a1,col,lw,a=1){c.globalAlpha=a;c.strokeStyle=col;c.lineWidth=lw;c.lineCap='round';c.beginPath();c.arc(x,y,r,a0,a1);c.stroke();c.globalAlpha=1}
+function disk(c,x,y,r,col,a=1){c.globalAlpha=a;c.fillStyle=col;c.beginPath();c.arc(x,y,r,0,7);c.fill();c.globalAlpha=1}
+
+// ---- the timeline every idea shares: a try that breaks off, a retry that lands, the restart -----------------------
+const PH=[['idle',900],['check',1100],['get',1500],['fail',2000],['check',1100],['get',3800],['finish',1500],['done',1800],['restart',2600],['after',1600]];
+const TOTAL=PH.reduce((a,b)=>a+b[1],0);
+const TAPS=[[0,600],[3,1700],[7,1400]].map(([i,t])=>PH.slice(0,i).reduce((a,b)=>a+b[1],0)+t);
+function phase(ms){ms%=TOTAL;let a=0;
+  for(let i=0;i<PH.length;i++){const[p,d]=PH[i];if(ms<a+d){const t=ms-a,f=t/d,run=i<4?0:1;
+    let pct=0;if(p==='get')pct=run?Math.floor(100*(.8*f+.2*f*f)):Math.floor(38*ease(f));
+    if(p==='fail')pct=38;if(p==='finish'||p==='done'||p==='restart')pct=100;
+    let tap=1e9;TAPS.forEach(x=>{if(ms>=x)tap=Math.min(tap,ms-x)});
+    return{p,t,f,i,run,pct,tap,abs:ms}}a+=d}}
+// the restart, the same in every idea unless it draws its own: the row says goodbye, both screens dip, the new one comes up
+const R_GO=700,R_DARK=1300,R_UP=1650,R_IN=2250;
+function blackout(s){if(s.p!=='restart')return 0;const t=s.t;
+  if(t<R_GO)return 0;if(t<R_DARK)return easeIO((t-R_GO)/(R_DARK-R_GO));if(t<R_UP)return 1;return 1-easeIO((t-R_UP)/(R_IN-R_UP))}
+const shown=s=>s.p==='restart'&&s.t>=R_UP?'after':s.p;
+const busy=p=>p==='check'||p==='get'||p==='finish';
+
+function subline(s){switch(shown(s)){
+  case'check':return'Checking GitHub';
+  case'get':return'Downloading v'+NEWV+' · '+s.pct+'%';
+  case'finish':return'Installing v'+NEWV;
+  case'fail':return"Didn't update: the download broke off";
+  case'done':case'restart':return'v'+NEWV+' installed · tap to restart';
+  default:return'Get the newest version from GitHub'}}
+
+// ---- the Settings list as the app draws it: title at y+15, the second line at y+28, widgets on the right ----------
+const Y0=56, UPD=2;
+function chevron(c,y,a=1){c.globalAlpha=a;c.fillStyle=GREY;c.beginPath();c.moveTo(W-18,y+13);c.lineTo(W-18,y+21);c.lineTo(W-13,y+17);c.closePath();c.fill();c.globalAlpha=1}
+function check(c,x,y,r,a=1){disk(c,x,y,r,G,a);c.save();c.globalAlpha=a;c.strokeStyle=INK;c.lineWidth=r*.24;c.lineCap='round';c.lineJoin='round';
+  c.beginPath();c.moveTo(x-r*.42,y+r*.02);c.lineTo(x-r*.12,y+r*.32);c.lineTo(x+r*.45,y-r*.3);c.stroke();c.restore()}
+function dots(c,y,ms){const head=Math.floor(ms/70)%8;for(let d=0;d<8;d++){const a=d*Math.PI/4,age=(head-d+8)%8;disk(c,W-20+6*Math.cos(a),y+17+6*Math.sin(a),1.5,G,(255-200*age/7)/255)}}
+function list(c,s,ms,idea){
+  const p=shown(s),after=p==='after';
+  const rows=[['Name on Spotify','3DStereo',true],['Clear cache','Covers, photos, lyrics',true],['Update',null,false],['About','v'+(after?NEWV:'1.0.0')+' · Lii-lac',false]];
+  rows.forEach(([t,sub,chev],k)=>{const y=Y0+k*ROW;
+    if(k!==UPD){txt(c,t,16,y+15,11,WHITE,'left','600');txt(c,sub,16,y+28,9,GREY,'left','400');if(chev)chevron(c,y);return}
+    const dx=idea.shake?idea.shake(s):0;c.save();c.translate(dx,0);
+    if(s.tap<400&&!after)fillRR(c,6,y+1,W-12,ROW-2,6,WHITE,45/255*(1-s.tap/400));
+    if(idea.behind)idea.behind(c,s,y,ms);
+    txt(c,t,16,y+15,11,WHITE,'left','600');
+    const pulse=busy(p)&&!idea.calm?(150+105*Math.sin(ms/180))/255:1;
+    txt(c,subline(s),16,y+28,9,busy(p)&&!idea.calm?G:GREY,'left','400',busy(p)&&!idea.calm?pulse:1,W-56);
+    idea.widget(c,{...s,p},y,ms);c.restore();
+    if(s.tap<350&&!after)disk(c,210,y+17,9+6*s.tap/350,WHITE,.22*(1-s.tap/350))});
+}
+
+// ---- one rig per idea: the touchscreen, and the top screen only where it joins in -------------------------------
+const ideas=[];
+function rig(name,idea){const cell=document.createElement('div');cell.className=idea.top?'cell wide':'cell';cell.innerHTML='<b>'+name+'</b>';
+  const r=document.createElement('div');r.className='rig';
+  const mk=(w,h)=>{const cv=document.createElement('canvas');cv.width=w*S*2;cv.height=h*S*2;cv.style.width=w*S+'px';cv.style.height=h*S+'px';const c=cv.getContext('2d');c.scale(S*2,S*2);r.appendChild(cv);return c};
+  const top=idea.top?mk(400,240):null,bot=mk(320,240);cell.appendChild(r);document.getElementById('grid').appendChild(cell);
+  ideas.push(ms=>{const s=phase(ms);
+    if(top){top.fillStyle=BG;top.fillRect(0,0,400,240);idea.top(top,s,ms)}
+    bot.fillStyle=BG;bot.fillRect(0,0,320,240);list(bot,s,ms,idea);
+    const k=idea.blackout?idea.blackout(s):blackout(s);if(k>0){bot.globalAlpha=k;bot.fillStyle='#000';bot.fillRect(0,0,320,240);bot.globalAlpha=1}})}
+
+// ================= A: the chevron becomes a ring ====================================================================
+function downArrow(c,x,y,col,a=1,dy=0){c.save();c.globalAlpha=a;c.strokeStyle=col;c.lineWidth=1.6;c.lineCap='round';c.lineJoin='round';
+  c.beginPath();c.moveTo(x,y-3.5+dy);c.lineTo(x,y+3+dy);c.moveTo(x-2.8,y+.4+dy);c.lineTo(x,y+3.2+dy);c.lineTo(x+2.8,y+.4+dy);c.stroke();c.restore()}
+function refresh(c,x,y,r,ang){c.save();c.translate(x,y);c.rotate(ang);c.strokeStyle=INK;c.fillStyle=INK;c.lineWidth=1.6;c.lineCap='round';
+  c.beginPath();c.arc(0,0,r,.5,Math.PI*1.75);c.stroke();const ax=r*Math.cos(Math.PI*1.75),ay=r*Math.sin(Math.PI*1.75);
+  c.beginPath();c.moveTo(ax+2.6,ay-.6);c.lineTo(ax-.4,ay-2.6);c.lineTo(ax+.2,ay+1.6);c.closePath();c.fill();c.restore()}
+rig('A  the chevron becomes a ring',{
+  shake:s=>s.p==='fail'&&s.t<450?Math.sin(s.t/22)*3.5*(1-s.t/450):0,
+  widget(c,s,y,ms){const x=W-20,cy=y+17,p=s.p,R=7;
+    if(p==='idle'||p==='after'){const m=p==='idle'&&s.tap<300?ease(s.tap/300):0;chevron(c,y,1-m);if(m>0){arc(c,x,cy,R*m,0,6.29,WHITE,1.6,.2*m);downArrow(c,x,cy,GREY,m)}return}
+    if(p==='check'){arc(c,x,cy,R,0,6.29,WHITE,1.6,.15);const a0=ms/160;arc(c,x,cy,R,a0,a0+1.7,G,1.6);downArrow(c,x,cy,GREY);return}
+    if(p==='get'){arc(c,x,cy,R,0,6.29,WHITE,1.6,.15);arc(c,x,cy,R,-Math.PI/2,-Math.PI/2+6.283*s.pct/100,G,1.6);downArrow(c,x,cy,G,1,Math.max(0,Math.sin(ms/220))*1.2);return}
+    if(p==='finish'){arc(c,x,cy,R,0,6.29,G,1.6);const u=(ms%800)/800;downArrow(c,x,cy-1,G,1-ease(u),ease(u)*3);c.globalAlpha=.9;c.fillStyle=G;c.fillRect(x-3.5,cy+4,7,1.4);c.globalAlpha=1;return}
+    if(p==='done'){const pop=s.t<260?1+.35*Math.sin(Math.PI*s.t/260):1;const k=ease(s.t/200);
+      const u=(s.t%1300)/1300;if(s.t>400)arc(c,x,cy,9+7*ease(u),0,6.29,G,1.4,.6*(1-u));
+      if(s.tap<9e8&&s.t>1400){disk(c,x,cy,9,G);refresh(c,x,cy,4,(s.t-1400)/90)}else check(c,x,cy,9*pop*k);return}
+    if(p==='restart'){disk(c,x,cy,9,G);refresh(c,x,cy,4,(s.t+400)/(90+s.t/12));return}
+    if(p==='fail'){arc(c,x,cy,R,0,6.29,WHITE,1.6,.15);arc(c,x,cy,R,-Math.PI/2,-Math.PI/2+6.283*.38,GREY,1.6,.7);
+      c.fillStyle=GREY;c.fillRect(x-.8,cy-3.6,1.6,4.4);disk(c,x,cy+3,.95,GREY)}}});
+
+// ================= B: a mixtape that winds ============================================================================
+function tape(c,cx,cy,o){c.save();c.translate(cx,cy);c.rotate(o.tilt||0);c.globalAlpha=o.a??1;
+  fillRR(c,-15,-10,30,20,3,CREAM,o.a??1);
+  fillRR(c,-12,-8,24,5,1.5,o.green?G:'#fff',(o.a??1)*(o.green?1:.55));
+  fillRR(c,-10,-1,20,8,4,INK,o.a??1);
+  [-5,5].forEach((rx,k)=>{const pack=lerp(k?2:4.2,k?4.2:2,o.prog);disk(c,rx,3,pack,TAPE,o.a??1);
+    c.save();c.translate(rx,3);c.rotate(o.ang);c.globalAlpha=o.a??1;c.fillStyle=k?G:CREAM;c.beginPath();c.arc(0,0,1.8,0,7);c.fill();c.fillStyle=INK;for(let q=0;q<3;q++){c.rotate(Math.PI*2/3);c.fillRect(-.35,-1.7,.7,.9)}c.restore()});
+  if(o.spill){c.globalAlpha=1;c.strokeStyle=SPILL;c.lineWidth=1.3;c.lineCap='round';c.beginPath();c.moveTo(-3,6.5);
+    c.bezierCurveTo(-7,6.5+o.spill,5,6.5+o.spill*1.3,3,6.5);c.stroke();
+    c.beginPath();c.moveTo(1,6.5);c.bezierCurveTo(-1,6.5+o.spill*.7,8,6.5+o.spill,6,6.5+o.spill*.4);c.stroke()}
+  c.restore()}
+rig('B  a mixtape that winds',{
+  widget(c,s,y,ms){const cx=W-30,cy=y+17,p=s.p,sc=1.3;c.save();c.translate(cx,cy);c.scale(sc,sc);
+    const go=(o)=>tape(c,0,o.dy||0,o);
+    if(p==='idle'||p==='after'){const hop=p==='idle'&&s.tap<300?Math.sin(Math.PI*s.tap/300)*3:0;go({prog:p==='after'?0:0,ang:0,a:.55+.45*(hop>0),dy:-hop})}
+    else if(p==='check')go({prog:0,ang:Math.sin(ms/80)*.6});
+    else if(p==='get')go({prog:s.pct/100,ang:ms/110});
+    else if(p==='finish'){const u=(ms%750)/750;go({prog:1,ang:ms/320,dy:u<.15?Math.sin(Math.PI*u/.15)*-1.6:0})}
+    else if(p==='done'){go({prog:1,ang:0,green:s.t>150});const pop=s.t<260?1+.35*Math.sin(Math.PI*s.t/260):1;if(s.t>120)check(c,13,-9,5.5*pop)}
+    else if(p==='restart'){const u=ease(s.t/600);go({prog:1,ang:0,green:true,dy:-u*28,a:1-u})}
+    else if(p==='fail'){const k=ease(s.t/500);go({prog:.38,ang:0,tilt:-.16*k,spill:k*(6+Math.sin(ms/260)*1.2)})}
+    c.restore()}});
+
+// ================= C: the row fills like a meter ======================================================================
+function eq(c,x,base,ms,live,a=1){for(let i=0;i<4;i++){const h=live?3+9*(.5+.5*Math.sin(ms/120+i*1.9))*live+3*(1-live):2;fillRR(c,x+i*4.5,base-h,3,h,1.5,G,a)}}
+rig('C  the row fills like a meter',{
+  calm:true,
+  behind(c,s,y,ms){const p=s.p,x0=6,w=W-12,h=ROW-2,top=y+1;c.save();rr(c,x0,top,w,h,6);c.clip();
+    if(p==='check'){const u=(ms%1100)/1100;const bx=x0-60+u*(w+120);const g=c.createLinearGradient(bx-50,0,bx+50,0);g.addColorStop(0,'rgba(30,215,96,0)');g.addColorStop(.5,'rgba(30,215,96,.16)');g.addColorStop(1,'rgba(30,215,96,0)');c.fillStyle=g;c.fillRect(x0,top,w,h)}
+    if(p==='get'){const fw=w*s.pct/100;fillRR(c,x0,top,fw,h,0,G,.14);fillRR(c,x0+fw-1.5,top,1.5,h,0,G,.6);eq(c,W-36,top+h-8,ms,1,.85)}
+    if(p==='finish'){fillRR(c,x0,top,w,h,0,G,.15+.07*Math.sin(ms/200));eq(c,W-36,top+h-8,ms,.5+.5*Math.cos(clamp(s.f)*Math.PI/2),.85)}
+    if(p==='done'){fillRR(c,x0,top,w,h,0,G,lerp(.18,.07,ease(s.t/600)))}
+    if(p==='restart'){fillRR(c,x0,top,w,h,0,G,.07+.25*ease(s.t/500))}
+    if(p==='fail'){const d=ease(s.t/700);const fw=w*.38*(1-d);fillRR(c,x0,top,fw,h,0,d<.5?G:'#555',.14*(1-d*.3));eq(c,W-36,top+h-8,ms,(1-d)*.6,clamp(1-d*1.5))}
+    c.restore()},
+  widget(c,s,y,ms){const p=s.p,x=W-20,cy=y+17;
+    if(p==='idle'||p==='after')chevron(c,y);
+    else if(p==='done'||p==='restart'){const pop=p==='done'&&s.t<300?1+.35*Math.sin(Math.PI*s.t/300):1;check(c,x,cy,9*pop*(p==='done'?ease(s.t/220):1))}
+    else if(p==='fail'&&s.t>600)chevron(c,y,ease((s.t-600)/300))}});
+
+// ================= D: the record swap, when it restarts ===============================================================
+// The row keeps today's spinner; the point here is the restart. The old app spins its record down and hands off,
+// the system's black gap, and the new one starts by spinning the new record up and tucking it back in its sleeve.
+function sleeve(c,x,y,a=1){c.save();c.globalAlpha=a;const g=c.createLinearGradient(x,y,x+132,y+132);g.addColorStop(0,'#3b2a5c');g.addColorStop(1,'#b0513a');c.fillStyle=g;rr(c,x,y,132,132,4);c.fill();
+  c.globalAlpha=a*.25;c.fillStyle='#fff';c.beginPath();c.arc(x+92,y+44,22,0,7);c.fill();c.restore()}
+function record(c,x,y,r,ang,label,flip,a=1){c.save();c.translate(x,y);c.globalAlpha=a;disk(c,0,0,r,'#0b0b0b',a);
+  for(let k=1;k<6;k++)arc(c,0,0,r*(.42+k*.1),0,6.29,'#fff',.6,.06*a);
+  c.rotate(ang);arc(c,0,0,r*.8,-.5,.15,'#fff',2.2,.12*a);arc(c,0,0,r*.8,Math.PI-.5,Math.PI+.15,'#fff',2.2,.12*a);
+  c.save();c.scale(Math.abs(Math.cos(flip*Math.PI))||.001,1);disk(c,0,0,r*.36,G,a);txt(c,label,0,4,12,INK,'center','800',a);c.restore();
+  disk(c,0,0,2,'#0b0b0b',a);c.restore()}
+function nowPlaying(c,a=1){sleeve(c,30,44,a);fillRR(c,184,72,150,13,4,WHITE,.85*a);fillRR(c,184,94,96,9,4,GREY,.5*a);fillRR(c,30,200,340,3,1.5,WHITE,.22*a);fillRR(c,30,200,136,3,1.5,WHITE,.85*a)}
+// restart timeline for D: out of the sleeve, spin down, flip, dark gap, spin up, back in
+const D_OUT=500,D_DOWN=1100,D_DARK=1450,D_UP=2100,D_IN=2600;
+rig('D  the record swap',{
+  widget(c,s,y,ms){if(busy(s.p))dots(c,y,ms);else chevron(c,y)},
+  blackout(s){if(s.p!=='restart')return 0;const t=s.t;if(t<D_OUT)return 0;if(t<D_DOWN)return easeIO((t-D_OUT)/(D_DOWN-D_OUT))*1;if(t<D_DARK)return 1;if(t<D_UP)return 1-easeIO((t-D_DARK)/(D_UP-D_DARK));return 0},
+  top(c,s,ms){if(s.p!=='restart'){nowPlaying(c);return}
+    const t=s.t,cx0=96,cy=110,R=62;
+    if(t<D_DOWN){const out=ease(t/D_OUT),down=clamp((t-D_OUT)/(D_DOWN-D_OUT));
+      const ang=t/60-down*down*4;record(c,cx0+out*110,cy,R,ang,'1.0.0',0);
+      sleeve(c,30,44);fillRR(c,184,72,150,13,4,WHITE,.85*(1-out));fillRR(c,184,94,96,9,4,GREY,.5*(1-out));
+      c.globalAlpha=easeIO((down-.6)/.4);c.fillStyle='#000';c.fillRect(0,0,400,240);c.globalAlpha=1;return}
+    if(t<D_DARK){c.fillStyle='#000';c.fillRect(0,0,400,240);return}
+    const up=clamp((t-D_DARK)/(D_UP-D_DARK)),back=ease((t-D_UP)/(D_IN-D_UP));
+    sleeve(c,30,44,ease(up*1.5));
+    record(c,cx0+110*(1-back),cy,R,(t-D_DARK)/(60+180*(1-up)),NEWV,0,1);
+    sleeve(c,30,44,ease(up*1.5)*clamp(back*3));
+    fillRR(c,184,72,150,13,4,WHITE,.85*back);fillRR(c,184,94,96,9,4,GREY,.5*back);
+    c.globalAlpha=1-easeIO(up/.6);c.fillStyle='#000';c.fillRect(0,0,400,240);c.globalAlpha=1}});
+
+// ---- run ---------------------------------------------------------------------------------------------------------
+let t0=performance.now();
+const fix=/t=(\d+)/.exec(location.hash);
+document.getElementById('replay').onclick=()=>{t0=performance.now()};
+const NAMES={idle:'waiting for a tap',check:'checking',get:'downloading',fail:'broke off',finish:'installing',done:'installed',restart:'restarting',after:'the new version'};
+function frame(now){const ms=fix?+fix[1]:(now-t0);const q=Math.floor(ms/16.7)*16.7;ideas.forEach(f=>f(q));
+  document.getElementById('ph').textContent=NAMES[phase(ms).p];
+  if(!fix)requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script>

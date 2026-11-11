@@ -19,6 +19,7 @@
 #include "spotify.h"
 #include "spotmatch.h"
 #include "stats.h"
+#include "update.h"
 #include <sys/stat.h>
 
 #define GREEN 0x1ed760
@@ -648,7 +649,9 @@ static void ease_step(void) {
 }
 static void ease_clear(void) { neases = 0; }
 static int cur[T_HOME + 1];
-#define NSET 8   // the Settings page's rows (drawer.inc)
+#define NSET 9   // the Settings page's rows (drawer.inc)
+static bool upd_go;   // Settings > Update, installed and tapped again: main's loop ends and 3DStereo starts again
+static u64 upd_bye;   // ...after the goodbye (bye_draw), which started then; 0: not leaving
 static char dev_name[64] = "3DStereo";   // Settings: what Spotify calls this 3DS
 static bool extra_details;   // Settings: the file's format and LOSSLESS on the player (off: just the song)
 static void draw_set_row(int k, float y);
@@ -2303,6 +2306,49 @@ static float e_out(float p) { float q = 1 - p; return 1 - q * q * q * q; }
 static float e_in(float p) { return p * p * p; }
 static float lerpf(float a, float b, float p) { return a + (b - a) * p; }
 
+// Settings > Update's goodbye, over the drawn screens: the record slides out of the player's cover
+// (this version's, its number on the label), spins down, and both screens go dark. Then upd_go.
+#define BYE_MS 1300
+static void bye_draw(const AudioInfo *ai) {
+	float t = (float)(osGetTime() - upd_bye);
+	float W = swapped ? 320 : 400;
+	Layout L = player_layout(W);
+	float cs = L.cs, R = cs * 0.46f;
+	float cx = L.x0 + cs / 2 + e_out(sg(t, 0, 450)) * cs * 0.62f, cy = L.cy + cs / 2;
+	float s = (t < BYE_MS ? t : BYE_MS) / 1000.0f, T = BYE_MS / 1000.0f;
+	float ang = 9 * (s - s * s / (2 * T));   // 9 rad/s, slowing to a stop as it goes dark
+	if (sw == 0 && lift == 0) {   // the player where it rests; mid-swipe, or lifted, the cover is somewhere else: just the dark
+		C2D_SceneBegin(swapped ? bot : top);
+		C2D_ViewReset();
+		C2D_DrawCircleSolid(cx, cy, 0, R, rgb(0x0e0e0e));
+		for (float r = R - 3; r > R * 0.42f; r -= 3)   // the grooves
+			C2D_DrawCircleSolid(cx, cy, 0, r, rgb(((int)(r / 3) & 1) ? 0x161616 : 0x101010));
+		for (int i = 0; i < 2; i++) {   // the light on it, which stays where it is while the record turns under it
+			float a = -0.9f + i * (float)M_PI;
+			C2D_DrawTriangle(cx, cy, rgba(0xffffff, 0), cx + R * cosf(a), cy + R * sinf(a), rgba(0xffffff, 26),
+			                 cx + R * cosf(a + 0.4f), cy + R * sinf(a + 0.4f), rgba(0xffffff, 26), 0);
+		}
+		C2D_DrawCircleSolid(cx, cy, 0, R * 0.36f, rgb(GREEN));
+		C2D_ViewTranslate(cx, cy);
+		C2D_ViewRotate(ang);
+		text("v" VERSION, 0, -1, 8, rgb(SP_DEEP), C2D_AlignCenter | BOLD, 0);
+		rect(-R * 0.18f, R * 0.08f, R * 0.36f, 1.5f, rgba(SP_DEEP, 160));
+		C2D_ViewReset();
+		C2D_DrawCircleSolid(cx, cy, 0, 2, rgb(0x0e0e0e));
+		// the sleeve: the cover again, over the record's way in
+		Track *tr = ai->open ? &lib.t[ai->track] : NULL;
+		float k = cs / ART_BIG;
+		if (tr && big_alb >= 0 && big_none != ai->track) C2D_DrawImageAt((C2D_Image){&big_tex, &big_sub}, L.x0, L.cy, 0, NULL, k, k);
+		else rrect(L.x0, L.cy, cs, cs, 4, rgb(tr ? mixc(top_color, 0x282828, 0.5f) : 0x282828));
+	}
+	u8 dark = (u8)(255 * e_io(sg(t, 500, BYE_MS)));
+	if (!dark) return;
+	C2D_SceneBegin(top);
+	rect(0, 0, 400, 240, rgba(0, dark));
+	C2D_SceneBegin(bot);
+	rect(0, 0, 320, 240, rgba(0, dark));
+}
+
 static void sp_tile(float cx, float cy, float w, float h, float r, float sd) {
 	if (sd > 0.05f) rrect(cx - w / 2 + sd, cy - h / 2 + sd, w, h, r, rgb(SP_DEEP));
 	rrect(cx - w / 2, cy - h / 2, w, h, r, rgb(GREEN));
@@ -2636,7 +2682,7 @@ int main(void) {
 	hidScanInput();
 	bool test = hidKeysHeld() & KEY_L;   // the HOME test: see home_test
 	if (!test) osSetSpeedupEnable(true);   // New 3DS: 804 MHz and the L2 cache
-	crumb("---- 3DStereo build %d%s", BUILD, test ? ", HOME test" : "");
+	crumb("---- 3DStereo v%s (build %d)%s", VERSION, BUILD, test ? ", HOME test" : "");
 	// which way we were started: an installed title (CIA) or the Homebrew Launcher's 3dsx; their memory and permissions differ
 	crumb("launch: %s, heap %lu KB, linear heap %lu KB, app memory %lu KB", envIsHomebrew() ? "3dsx" : "CIA",
 	      (unsigned long)(envGetHeapSize() >> 10), (unsigned long)(envGetLinearHeapSize() >> 10),
@@ -2689,6 +2735,7 @@ int main(void) {
 	stats_load();
 	// the network's threads: locks first, the matcher built once here (the threads only read it)
 	net_init();
+	upd_init();
 	spot_init();
 	sm_build();
 	thumb_ok = calloc(lib.nal + 1, 1);
@@ -2770,6 +2817,7 @@ int main(void) {
 	if (!audio_ok) swapped = false;   // the touchscreen has to explain why
 	if (swapped) set_swap(true);
 	if (audio_ok && !quit) intro_play();   // the splash's way into Home: the tile lands on the Home chip, up top in the usual layout, on the touchscreen in the other
+	if (upd_just_updated()) say("Updated to v" VERSION);   // Settings > Update restarted us into this one
 	bool splash_due = true;   // freed after the first frame of the main loop, once the last of the intro's has been drawn
 	#define IDLE_A_MS 8000    // this long without a press or a touch, and A is play/pause
 	#define IDLE_DRAW_MS 1500 // this long without any input and nothing moving by itself: draw every other pass (30 fps)
@@ -2796,7 +2844,7 @@ int main(void) {
 	u64 act_ms = osGetTime();   // the last press, stick or touch (for IDLE_DRAW_MS)
 	bool draw_skipped = false;  // the pass before this one was a rest
 
-	while (!quit && !cc_go && aptMainLoop()) {
+	while (!quit && !cc_go && !upd_go && aptMainLoop()) {
 		hidScanInput();
 		u32 kd = hidKeysDown(), kr = hidKeysDownRepeat(), kh = hidKeysHeld(), ku = hidKeysUp();
 		if (kd | kr | kh | ku) act_ms = osGetTime();
@@ -3407,7 +3455,7 @@ int main(void) {
 		// input, and nothing mid-move that needs the rate (a touch, a page change, the pair and clear pages, the hold
 		// to clear), every other pass waits for the vblank instead of drawing: the logic above still runs at 60 and
 		// the drawing is all clock-driven, so nothing slows down, it just steps at 30. One touch and it's 60 again.
-		if (osGetTime() - act_ms > IDLE_DRAW_MS && !touching && !pair_on && !pt_dir && dip_t == -2 && qclear_p <= 0 && !cc_page && !draw_skipped) {
+		if (osGetTime() - act_ms > IDLE_DRAW_MS && !touching && !pair_on && !pt_dir && dip_t == -2 && qclear_p <= 0 && !cc_page && !upd_bye && !draw_skipped) {
 			draw_skipped = true;
 			gspWaitForVBlank();
 			continue;
@@ -3441,6 +3489,7 @@ int main(void) {
 				rect(0, 0, 320 * qclear_p, 3, rgb(GREEN));
 			}
 			dip_step();
+			if (upd_bye) bye_draw(&ai);
 		}
 		else {
 			C2D_TargetClear(top, rgb(BG));
@@ -3454,6 +3503,7 @@ int main(void) {
 		}
 		u64 t_drawn = osGetTime();
 		C3D_FrameEnd(0);
+		if (upd_bye && osGetTime() - upd_bye >= BYE_MS) upd_go = true;   // the goodbye's last frame is out: on to the new version
 		u64 t_end = osGetTime();
 		u64 frame_ms = t_end - frame_t0;
 		last_end = t_end;
@@ -3487,6 +3537,8 @@ int main(void) {
 	ap_clear();
 	meta_lyrics_free(lyr);
 	sm_free();
+	upd_exit();   // before the network goes: a download still going is stopped (a half-done CIA install is cancelled)
+	if (upd_go) aptSetChainloaderToSelf();   // the new version, opened
 	net_exit();
 	C3D_TexDelete(&big_tex);
 	C3D_TexDelete(&atlas);
