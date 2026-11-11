@@ -12,6 +12,7 @@ static float drawer_t;   // how far out it is, 0 to 1, eased toward drawer_on
 static int drawer_cur;
 static const char *DRAWER[] = {"Library", "Charts", "Pair", "Settings"};
 #define NDRAW 4
+#define DR_TOP 72   // the first row's top; the name sits above it
 
 static int drawer_page(void) { return pair_on && !cc_page ? 2 : detail < 0 && tab == T_STATS ? 1 : detail < 0 && tab == T_SETTINGS ? 3 : 0; }
 static void drawer_open(bool on) {
@@ -76,13 +77,15 @@ static void draw_drawer(float W, float H) {
 	rect(x0, 0, pw, H, rgb(0x181818));
 	rect(x0 + pw, 0, 1, H, rgba(0xffffff, 25));
 	// the name as the README writes it, a green 3; both halves in one font, whichever has the whole name
+	// sized to fill the drawer's width (less its margins), not a label's size
 	u32 nf = BOLD | (nf_has("3DStereo") ? NAMEF : 0);
-	float nx = x0 + 16;
-	nx += text("3", nx, 38, 18, rgb(GREEN), nf, 0);
-	text("DStereo", nx, 38, 18, rgb(0xffffff), nf, 0);
+	float nw = (nf & NAMEF) ? measure_name("3DStereo", 18) : measure("3DStereo", 18);
+	float npx = fminf(18 * (pw - 32) / (nw > 1 ? nw : 1), 32), nx = x0 + 16;
+	nx += text("3", nx, DR_TOP - 16, npx, rgb(GREEN), nf, 0);
+	text("DStereo", nx, DR_TOP - 16, npx, rgb(0xffffff), nf, 0);
 	int at = drawer_page();
 	for (int k = 0; k < NDRAW; k++) {
-		float y = 62 + k * 38;
+		float y = DR_TOP + k * 38;
 		bool here = k == at, foc = k == drawer_cur;
 		if (foc) rrect(x0 + 8, y, pw - 16, 32, 6, rgba(0xffffff, here ? 30 : 18));
 		u32 c = rgb(here ? GREEN : 0xffffff);
@@ -107,7 +110,7 @@ static void drawer_keys(u32 kd, u32 kr) {
 static void drawer_tap(int x, int y) {
 	if (x < drawer_w(320)) {
 		for (int k = 0; k < NDRAW; k++)
-			if (y >= 62 + k * 38 && y < 94 + k * 38) { drawer_pick(k); return; }
+			if (y >= DR_TOP + k * 38 && y < DR_TOP + 32 + k * 38) { drawer_pick(k); return; }
 		return;
 	}
 	drawer_open(false);
